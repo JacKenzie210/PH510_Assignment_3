@@ -13,8 +13,8 @@ x,y = r,r
 square = [ [-x, -x, x, x, -x] ,[-y, y , y, -y, -y] ]
 plt.figure()
 plt.plot(square[0],square[1])
-plt.xlim(-11,11)
-plt.ylim([-11,11])
+plt.xlim(-15,15)
+plt.ylim(-15,15)
 plt.axis('square')
 
 
@@ -28,4 +28,26 @@ plt.plot(xr,yr,'orange',0,0,'or')
 
 plt.plot([0,xr[125]],[0,yr[125]], '-->' )
 
-point = np.sqrt(xr[125]**2+yr[125]**2)
+
+xp = [8,-4,10,1]
+yp = [7,3,9,-4]
+plt.plot(xp,yp,'gx')
+
+
+point = [6, 7]
+plt.plot(point[0],point[1],'kx')
+if (point[0]**2 + point[1]**2 )>= r**2:
+    print('point outside circle')
+else:
+    print('point inside circle')
+
+if -r < point[0] < r and  -r < point[1] < r:
+    print("inside the square")
+else:
+    print('outside/on the square')
+    
+    
+
+
+
+
