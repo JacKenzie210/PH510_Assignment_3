@@ -48,10 +48,10 @@ class MontiCarlo:
 
     def point_radius(self):
         "the radius position of the coordinate from the centre"
-        rad_squared = np.sum(self.coords**2)
+        rad_squared = np.sum(self.coords**2, axis = 0)
         return np.sqrt(rad_squared)
     
-    def sq_boundary(self):
+    def sq_boundary(self,radius):
         "the square boundary conditions"
         lengths = 2*self.point_radius()
         area = lengths**2
@@ -97,11 +97,11 @@ print(a)
 b = test_2d.point_radius()
 print(b)
 
-t3 = test_2d.sq_boundary()
+t3 = test_2d.sq_boundary(rad)
 
 test_2d.plot2d(rad)
 
-print(test_2d.ratio)
+print(f'ratio = {test_2d.ratio}')
 
 
 
