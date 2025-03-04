@@ -12,7 +12,11 @@ from math import fsum
 class MontiCarlo:
 
     def __init__(self, coords):
-        "initialisation Constructor of n dimention array"
+        
+        """initialisation Constructor of n dimention array
+        Parameters
+        ----------
+        coords : co-ordinates in n dimentions , shape (n,num_points)."""
         self.coords = coords
         
     def used_points(self, radius):
@@ -26,6 +30,33 @@ class MontiCarlo:
                               , 1, 0) )/ (len(self.coords[0])) )
         
         return
+
+    def integrate(self, func, boundary, num):
+        """
+        Parameters
+        ----------
+        func : Arbirary funcion which passes the coords.
+        boundary : List of the integral limits (i.e b and a).
+        num : number of points.
+
+        Returns
+        -------
+        Value of integrated random points.
+        """
+
+        # self.inclosed_points = np.delete(self.coords, np.where(boundary[0] < func(self.coords) < boundary[1]),axis = 1)
+        # self.out_points = np.delete(self.coords, np.where(self.coords[0]**2+self.coords[1]**2
+        #                                 < radius**2),axis = 1)
+        
+        # self.ratio = fsum( (np.where(self.coords[0]**2+self.coords[1]**2 < radius**2
+        #                       , 1, 0) )/ (len(self.coords[0])) )     
+
+        
+        result = (boundary[1]-boundary[0])*np.mean(func(self.coords))
+        
+        
+        return result
+        
     
     def __str__(self):
         "allows the coordinates to be printed"
@@ -57,33 +88,38 @@ class MontiCarlo:
         area = lengths**2
         return area
 
-    def plot2d(self,radius):
+    def plot1d(self,func, boundary):
         
-        points = self.used_points(radius)
+
+        x_points = np.linspace(boundary[0], boundary[1],100)
+        f_est =  np.empty(np.shape(x_points))
         
-        x_square,y_square = radius,radius
-        square = [ [-x_square, -x_square, x_square, x_square, -x_square]
-                  ,[-y_square, y_square , y_square, -y_square, -y_square] ]
+        for i in range(len(x_points)):
+            
 
+            samples = np.random.uniform(boundary[0], x_points[i], 1000) 
 
-        theta = np.linspace(0, 2*np.pi,100)
-        x_circ = radius*np.cos(theta)
-        y_circ = radius*np.sin(theta)
+            f_est[i]= (x_points[i]-boundary[0])*np.mean(func(samples))
         
         plt.figure()
-        plt.plot(self.inclosed_points[0], self.inclosed_points[1], 'rx')
-        plt.plot(square[0],square[1],'k')
-        plt.plot(self.out_points[0], self.out_points[1], 'bx')
-        plt.plot(x_circ,y_circ,'k')
-        plt.axis('square')
+        plt.plot(x_points,f_est ,'o')
+        return
+
         
-    # def in_circle(self, sq_boundary_lenth):
-    #     "checks if the point is inside the circle of boundary"
-    #     if self.point_radius() <= boundary_length.point_radius():
-            
-rad = 1
-low_lim = -rad
-up_lim  = rad
+        
+        
+
+def sin(x):
+    "simple sin function for test"
+    return np.sin(x)
+def circ(coords):
+    "circle function for estimating pi/4"
+    return coords[0]**2+ coords[1]**2
+
+
+rad = np.pi
+low_lim = 0
+up_lim  = 2*rad
 N = 10000
 x_arr =  np.random.uniform(low_lim, up_lim , size =N)
 y_arr = np.random.uniform(low_lim, up_lim , size=N)
@@ -99,9 +135,42 @@ print(b)
 
 t3 = test_2d.sq_boundary(rad)
 
-test_2d.plot2d(rad)
+#test_2d.plot1d(sin,[low_lim,up_lim])
 
-print(f'ratio = {test_2d.ratio}')
+#print(f'ratio = {test_2d.ratio}')
+
+arr_1d = np.array([x_arr])
+test_1d = MontiCarlo(arr_1d)
+I =test_1d.integrate(sin, [low_lim,up_lim], N)
+test_1d.plot1d(sin,[low_lim,up_lim])
+print(f'integral check = {I}')
 
 
+    #     "Plots the function if it is 2D"
+    #     points = self.used_points(radius)
 
+    #     x_square,y_square = radius,radius
+    #     square = [ [-x_square, -x_square, x_square, x_square, -x_square]
+    #               ,[-y_square, y_square , y_square, -y_square, -y_square] ]
+
+
+    #     theta = np.linspace(0, 2*np.pi,100)
+    #     x_circ = radius*np.cos(theta)
+    #     y_circ = radius*np.sin(theta)
+        
+    #     plt.figure()
+    #     plt.plot(self.inclosed_points[0], self.inclosed_points[1], 'rx')
+    #     plt.plot(square[0],square[1],'k')
+    #     plt.plot(self.out_points[0], self.out_points[1], 'bx')
+    #     plt.plot(x_circ,y_circ,'k')
+    #     plt.axis('square')
+        
+    
+    
+    
+    
+    
+    # def in_circle(self, sq_boundary_lenth):
+    #     "checks if the point is inside the circle of boundary"
+    #     if self.point_radius() <= boundary_length.point_radius():
+            
