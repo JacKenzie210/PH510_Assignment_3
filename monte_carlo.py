@@ -95,8 +95,6 @@ class MontiCarlo:
         f_est =  np.empty(np.shape(x_points))
         
         for i in range(len(x_points)):
-            
-
             samples = np.random.uniform(boundary[0], x_points[i], 1000) 
 
             f_est[i]= (x_points[i]-boundary[0])*np.mean(func(samples))
@@ -104,6 +102,26 @@ class MontiCarlo:
         plt.figure()
         plt.plot(x_points,f_est ,'o')
         return
+    
+    def plotcirc(self,radius):
+        "Plots the function if it is 2D"
+        points = self.used_points(radius)
+
+        x_square,y_square = radius,radius
+        square = [ [-x_square, -x_square, x_square, x_square, -x_square]
+                  ,[-y_square, y_square , y_square, -y_square, -y_square] ]
+
+
+        theta = np.linspace(0, 2*np.pi,100)
+        x_circ = radius*np.cos(theta)
+        y_circ = radius*np.sin(theta)
+        
+        plt.figure()
+        plt.plot(self.inclosed_points[0], self.inclosed_points[1], 'rx')
+        plt.plot(square[0],square[1],'k')
+        plt.plot(self.out_points[0], self.out_points[1], 'bx')
+        plt.plot(x_circ,y_circ,'k')
+        plt.axis('square')
 
         
         
@@ -146,25 +164,7 @@ test_1d.plot1d(sin,[low_lim,up_lim])
 print(f'integral check = {I}')
 
 
-    #     "Plots the function if it is 2D"
-    #     points = self.used_points(radius)
 
-    #     x_square,y_square = radius,radius
-    #     square = [ [-x_square, -x_square, x_square, x_square, -x_square]
-    #               ,[-y_square, y_square , y_square, -y_square, -y_square] ]
-
-
-    #     theta = np.linspace(0, 2*np.pi,100)
-    #     x_circ = radius*np.cos(theta)
-    #     y_circ = radius*np.sin(theta)
-        
-    #     plt.figure()
-    #     plt.plot(self.inclosed_points[0], self.inclosed_points[1], 'rx')
-    #     plt.plot(square[0],square[1],'k')
-    #     plt.plot(self.out_points[0], self.out_points[1], 'bx')
-    #     plt.plot(x_circ,y_circ,'k')
-    #     plt.axis('square')
-        
     
     
     
