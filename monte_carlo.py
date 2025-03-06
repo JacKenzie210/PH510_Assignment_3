@@ -16,9 +16,31 @@ class MontiCarlo:
         """initialisation Constructor of n dimention array
         Parameters
         ----------
-        coords : list of co-ordinates in n dimentions , shape (n,num_points)."""
+        coords : list of co-ordinates in n dimentions , shape (n,num_points).
+        boundary : list of boundary conditions for the integral"""
+        
         self.coords = coords
         self.boundary = boundary
+        
+    def __str__(self):
+        "allows the coordinates to be printed"
+        return str(self.coords)
+    def __add__(self, other):
+        "addition with other objects of same class"
+        return MontiCarlo( np.add(self.coords , other.coords), self.boundary )
+    def __sub__(self, other):
+        "subtraction of objects of same class"
+        return MontiCarlo( np.subtract(self.coords, other.coords), self.boundary )
+    def __mul__(self,other):
+        "multiplication of objects of same class"
+        return MontiCarlo(self.coords*other.coords,self.boundary)
+    def __pow__(self, power):
+        "takes self to the power of any number"
+        return MontiCarlo( (self.coords**power),self.boundary )
+    def __getitem__(self, index):
+        "alllows the seperation of the coordinates"
+        return self.coords[index]    
+
     def used_points(self):
 
         self.inclosed_points = np.delete(self.coords, np.where(self.coords[0]**2+self.coords[1]**2
@@ -28,7 +50,6 @@ class MontiCarlo:
 
         self.ratio = fsum( (np.where(self.coords[0]**2+self.coords[1]**2 < self.radius**2
                               , 1, 0) )/ (len(self.coords[0])) )
-
         return
 
     def integrate(self, func, num):
@@ -50,30 +71,14 @@ class MontiCarlo:
         
         # self.ratio = fsum( (np.where(self.coords[0]**2+self.coords[1]**2 < radius**2
         #                       , 1, 0) )/ (len(self.coords[0])) )     
-
-        
-        result = (self.boundary[1]-self.boundary[0])*np.mean(func(self.coords))
-        return result
-        
+ 
+        self.integral = (self.boundary[1]-self.boundary[0])*np.mean(func(self.coords))
+        return self.integral
     
-    def __str__(self):
-        "allows the coordinates to be printed"
-        return str(self.coords)
-    def __add__(self, other):
-        "addition with other objects of same class"
-        return MontiCarlo( np.add(self.coords , other.coords), self.boundary )
-    def __sub__(self, other):
-        "subtraction of objects of same class"
-        return MontiCarlo( np.subtract(self.coords, other.coords), self.boundary )
-    def __mul__(self,other):
-        "multiplication of objects of same class"
-        return MontiCarlo(self.coords*other.coords,self.boundary)
-    def __pow__(self, power):
-        "takes self to the power of any number"
-        return MontiCarlo( (self.coords**power),self.boundary )
-    def __getitem__(self, index):
-        "alllows the seperation of the coordinates"
-        return self.coords[index]
+    def uniform_distribution(self):
+        self.var = (self.boundary[1]-self.boundary[0])**2/12
+        self.std = np.sqrt(self.var)
+        return
 
     def point_radius(self):
         "the radius position of the coordinate from the centre"
@@ -144,9 +149,9 @@ test_2d = MontiCarlo(arr_2d, bounds)
 
 test_2d1 = MontiCarlo(arr_2d, bounds)
 a = test_2d  - test_2d1
-print(a)
+#print(a)
 b = test_2d.point_radius()
-print(b)
+#print(b)
 
 test_2d.plotcirc()
 
@@ -157,10 +162,10 @@ test_1d = MontiCarlo(arr_1d, bounds)
 I =test_1d.integrate(sin, N)
 test_1d.plot1d(sin)
 print(f'integral check = {I}')
-    
 
-    
+
+
     # def in_circle(self, sq_boundary_lenth):
     #     "checks if the point is inside the circle of boundary"
     #     if self.point_radius() <= boundary_length.point_radius():
-            
+      
