@@ -65,20 +65,15 @@ class MontiCarlo:
         Value of integrated random points.
         """
 
-        # self.inclosed_points = np.delete(self.coords, np.where(boundary[0] < func(self.coords) < boundary[1]),axis = 1)
-        # self.out_points = np.delete(self.coords, np.where(self.coords[0]**2+self.coords[1]**2
-        #                                 < radius**2),axis = 1)
-        
-        # self.ratio = fsum( (np.where(self.coords[0]**2+self.coords[1]**2 < radius**2
-        #                       , 1, 0) )/ (len(self.coords[0])) )     
- 
         self.integral = (self.boundary[1]-self.boundary[0])*np.mean(func(self.coords))
         return self.integral
     
-    def uniform_distribution(self):
-        self.var = (self.boundary[1]-self.boundary[0])**2/12
+    def var_std(self):
+        self.var = np.var(self.coords)
         self.std = np.sqrt(self.var)
-        return
+        # self.var = (self.boundary[1]-self.boundary[0])**2/12
+        # self.std = np.sqrt(self.var)
+        return self.var,self.std
 
     def point_radius(self):
         "the radius position of the coordinate from the centre"
@@ -109,7 +104,7 @@ class MontiCarlo:
         return
     
     def plotcirc(self):
-        "Plots the function if it is 2D"
+        "Plots the special case of a circle"
         self.used_points()
         x_square,y_square = self.radius,self.radius
         square = [ [-x_square, -x_square, x_square, x_square, -x_square]
@@ -126,7 +121,7 @@ class MontiCarlo:
         plt.plot(self.out_points[0], self.out_points[1], 'bx')
         plt.plot(x_circ,y_circ,'k')
         plt.axis('square')
-        
+
 
 def sin(x):
     "simple sin function for test"
@@ -136,32 +131,37 @@ def circ(coords):
     return coords[0]**2+ coords[1]**2
 
 
-rad = np.pi
-low_lim =-rad
-up_lim  = rad
-N = 10000
-x_arr =  np.random.uniform(low_lim, up_lim , size =N)
-y_arr = np.random.uniform(low_lim, up_lim , size=N)
-bounds = np.array([low_lim,up_lim])
+if __name__ == "__main__":
+    rad = 1
+    low_lim = -rad
+    up_lim  = rad
+    N = 1000000
+    x_arr =  np.random.uniform(low_lim, up_lim , size =N)
+    y_arr = np.random.uniform(low_lim, up_lim , size=N)
+    bounds = np.array([low_lim,up_lim])
+    
+    print('\n1D testing')
+    arr_1d = np.array([x_arr])
+    test_1d = MontiCarlo(arr_1d, bounds)
+    I =test_1d.integrate(sin, N)
+    test_1d.plot1d(sin)
+    print(f'integral check = {I} \nvar & std = {test_1d.var_std()}')    
 
-arr_2d = np.array([x_arr, y_arr])
-test_2d = MontiCarlo(arr_2d, bounds)
+    print('\n2D testing')
+    arr_2d = np.array([x_arr, y_arr])
+    test_2d = MontiCarlo(arr_2d, bounds)
 
-test_2d1 = MontiCarlo(arr_2d, bounds)
-a = test_2d  - test_2d1
-#print(a)
-b = test_2d.point_radius()
-#print(b)
+    test_2d1 = MontiCarlo(arr_2d, bounds)
+    a = test_2d  - test_2d1
+    b = test_2d.point_radius()    
+    test_2d.plotcirc()
+    print(f'integral check = {test_2d.integrate(circ,N)}')
+    print(f'ratio = {test_2d.ratio}, pi = {test_2d.ratio*4}')
+    print(f'var & std = {test_2d.var_std()}')
 
-test_2d.plotcirc()
 
-#print(f'ratio = {test_2d.ratio}')
 
-arr_1d = np.array([x_arr])
-test_1d = MontiCarlo(arr_1d, bounds)
-I =test_1d.integrate(sin, N)
-test_1d.plot1d(sin)
-print(f'integral check = {I}')
+    
 
 
 
