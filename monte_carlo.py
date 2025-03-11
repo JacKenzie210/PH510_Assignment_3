@@ -41,16 +41,7 @@ class MontiCarlo:
         "alllows the seperation of the coordinates"
         return self.coords[index]    
 
-    def used_points(self):
 
-        self.inclosed_points = np.delete(self.coords, np.where(self.coords[0]**2+self.coords[1]**2
-                                        > self.radius**2),axis = 1)
-        self.out_points = np.delete(self.coords, np.where(self.coords[0]**2+self.coords[1]**2
-                                        < self.radius**2),axis = 1)
-
-        self.ratio = fsum( (np.where(self.coords[0]**2+self.coords[1]**2 < self.radius**2
-                              , 1, 0) )/ (len(self.coords[0])) )
-        return
 
     def integrate(self, func, num):
         """
@@ -68,11 +59,15 @@ class MontiCarlo:
         self.integral = (self.boundary[1]-self.boundary[0])*np.mean(func(self.coords))
         return self.integral
     
+    def mean(self,func):
+        self.f_array = func(self.coords)
+        mean = np.mean(self.f_array)
+        return mean
+    
+    
     def var_std(self):
-        self.var = np.var(self.coords)
-        self.std = np.sqrt(self.var)
-        # self.var = (self.boundary[1]-self.boundary[0])**2/12
-        # self.std = np.sqrt(self.var)
+        self.var = np.var(self.f_array)
+        self.std = np.sqrt(self.var) * (self.boundary[1]-self.boundary[0])
         return self.var,self.std
 
     def point_radius(self):
@@ -103,9 +98,20 @@ class MontiCarlo:
         plt.ylabel('Anti Derivitive of F(x)')
         return
     
+    def circ_points(self):
+
+        self.inclosed_points = np.delete(self.coords, np.where(self.coords[0]**2+self.coords[1]**2
+                                        > self.radius**2),axis = 1)
+        self.out_points = np.delete(self.coords, np.where(self.coords[0]**2+self.coords[1]**2
+                                        < self.radius**2),axis = 1)
+        
+        self.ratio =  (np.where(self.coords**2 < self.radius**2
+                              , 1, 0) )/ (len(self.coords[0])) 
+        return 
+    
     def plotcirc(self):
         "Plots the special case of a circle"
-        self.used_points()
+        self.circ_points()
         x_square,y_square = self.radius,self.radius
         square = [ [-x_square, -x_square, x_square, x_square, -x_square]
                   ,[-y_square, y_square , y_square, -y_square, -y_square] ]
@@ -122,7 +128,6 @@ class MontiCarlo:
         plt.plot(x_circ,y_circ,'k')
         plt.axis('square')
 
-
 def sin(x):
     "simple sin function for test"
     return np.sin(x)
@@ -135,7 +140,7 @@ if __name__ == "__main__":
     rad = 1
     low_lim = -rad
     up_lim  = rad
-    N = 1000000
+    N = 10000
     x_arr =  np.random.uniform(low_lim, up_lim , size =N)
     y_arr = np.random.uniform(low_lim, up_lim , size=N)
     bounds = np.array([low_lim,up_lim])
