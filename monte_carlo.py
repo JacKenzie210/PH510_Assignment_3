@@ -17,11 +17,14 @@ class MontiCarlo:
         Parameters
         ----------
         coords : list of co-ordinates in n dimentions , shape (n,num_points).
-        boundary : list of boundary conditions for the integral"""
-        
+        boundary : list of boundary conditions for the integral
+        dim: n dimentions
+        """
+
         self.coords = coords
         self.boundary = boundary
-        
+        self.dim = len(coords[:,0])
+
     def __str__(self):
         "allows the coordinates to be printed"
         return str(self.coords)
@@ -39,42 +42,37 @@ class MontiCarlo:
         return MontiCarlo( (self.coords**power),self.boundary )
     def __getitem__(self, index):
         "alllows the seperation of the coordinates"
-        return self.coords[index]    
+        return self.coords[index]
 
 
-
-    def integrate(self, func, num):
+    def integrate(self, func):
         """
         Parameters
         ----------
         func : Arbirary funcion which passes the coords.
         boundary : List of the integral limits (i.e b and a).
-        num : number of points.
 
         Returns
         -------
         Value of integrated random points.
         """
 
-        self.integral = (self.boundary[1]-self.boundary[0])*np.mean(func(self.coords))
+        self.integral = (self.boundary[1]-self.boundary[0])**self.dim *np.mean(func(self.coords))
         return self.integral
-    
-    def mean(self,func):
+
+    def mean_var_std(self,func):
+        "calculates the mean, varience and standard deviation"
         self.f_array = func(self.coords)
-        mean = np.mean(self.f_array)
-        return mean
-    
-    
-    def var_std(self):
+        self.mean = np.mean(self.f_array)
         self.var = np.var(self.f_array)
-        self.std = np.sqrt(self.var) * (self.boundary[1]-self.boundary[0])
-        return self.var,self.std
+        self.std = np.sqrt(self.var) * (self.boundary[1]-self.boundary[0])**self.dim
+        return self.mean, self.var,self.std
 
     def point_radius(self):
         "the radius position of the coordinate from the centre"
         self.radius = (abs(self.boundary[0])+abs(self.boundary[1]))/2
         return self.radius
-    
+
     def sq_boundary(self,boundary):
         "the square boundary conditions"
         lengths = 2*self.point_radius()
@@ -83,7 +81,6 @@ class MontiCarlo:
 
     def plot1d(self,func):
         
-
         x_points = np.linspace(self.boundary[0], self.boundary[1],100)
         f_est =  np.empty(np.shape(x_points))
         
@@ -91,24 +88,24 @@ class MontiCarlo:
             samples = np.random.uniform(self.boundary[0], x_points[i], 1000) 
 
             f_est[i]= (x_points[i]-self.boundary[0])*np.mean(func(samples))
-        
+
         plt.figure()
         plt.plot(x_points,f_est ,'o')
         plt.xlabel('x points')
         plt.ylabel('Anti Derivitive of F(x)')
         return
-    
+
     def circ_points(self):
 
         self.inclosed_points = np.delete(self.coords, np.where(self.coords[0]**2+self.coords[1]**2
                                         > self.radius**2),axis = 1)
         self.out_points = np.delete(self.coords, np.where(self.coords[0]**2+self.coords[1]**2
                                         < self.radius**2),axis = 1)
-        
-        self.ratio =  (np.where(self.coords**2 < self.radius**2
-                              , 1, 0) )/ (len(self.coords[0])) 
+
+        self.ratio =  fsum( (np.where(self.coords[0]**2 +self.coords[1]**2< self.radius**2
+                              , 1, 0) )/ (len(self.coords[0]))  )
         return 
-    
+
     def plotcirc(self):
         "Plots the special case of a circle"
         self.circ_points()
@@ -120,7 +117,7 @@ class MontiCarlo:
         theta = np.linspace(0, 2*np.pi,100)
         x_circ = self.radius*np.cos(theta) 
         y_circ = self.radius*np.sin(theta) 
-        
+
         plt.figure()
         plt.plot(self.inclosed_points[0], self.inclosed_points[1], 'rx')
         plt.plot(square[0],square[1],'k')
@@ -133,7 +130,11 @@ def sin(x):
     return np.sin(x)
 def circ(coords):
     "circle function for estimating pi/4"
-    return coords[0]**2+ coords[1]**2
+    rad_point = np.sqrt( np.sum(coords**2, axis = 0) )
+    radius = rad
+    rad_arr = np.where(rad_point < radius,1,0)
+    ratio = fsum(rad_arr)/len(rad_arr)
+    return rad_arr
 
 
 if __name__ == "__main__":
@@ -144,13 +145,13 @@ if __name__ == "__main__":
     x_arr =  np.random.uniform(low_lim, up_lim , size =N)
     y_arr = np.random.uniform(low_lim, up_lim , size=N)
     bounds = np.array([low_lim,up_lim])
-    
+
     print('\n1D testing')
     arr_1d = np.array([x_arr])
     test_1d = MontiCarlo(arr_1d, bounds)
-    I =test_1d.integrate(sin, N)
+    I =test_1d.integrate(sin)
     test_1d.plot1d(sin)
-    print(f'integral check = {I} \nvar & std = {test_1d.var_std()}')    
+    print(f'integral check = {I} \nmean, var & std = {test_1d.mean_var_std(sin)}')
 
     print('\n2D testing')
     arr_2d = np.array([x_arr, y_arr])
@@ -158,19 +159,8 @@ if __name__ == "__main__":
 
     test_2d1 = MontiCarlo(arr_2d, bounds)
     a = test_2d  - test_2d1
-    b = test_2d.point_radius()    
+    b = test_2d.point_radius()
     test_2d.plotcirc()
-    print(f'integral check = {test_2d.integrate(circ,N)}')
+    print(f'integral check = {test_2d.integrate(circ)}')
     print(f'ratio = {test_2d.ratio}, pi = {test_2d.ratio*4}')
-    print(f'var & std = {test_2d.var_std()}')
-
-
-
-    
-
-
-
-    # def in_circle(self, sq_boundary_lenth):
-    #     "checks if the point is inside the circle of boundary"
-    #     if self.point_radius() <= boundary_length.point_radius():
-      
+    print(f'mean,var & std = {test_2d.mean_var_std(circ)}')
