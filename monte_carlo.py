@@ -126,9 +126,11 @@ class MontiCarlo:
         plt.axis('square')
         
     def parallel(self):
-        import mpi4py as MPI
+        from mpi4py import MPI
         comm = MPI.COMM_WORLD
-        ranks = MPI.get_rank
+        ranks = comm.Get_rank()
+        procs = comm.Get_size()
+        print(ranks,procs)
         
         return
         
