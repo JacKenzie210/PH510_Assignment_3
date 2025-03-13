@@ -92,7 +92,7 @@ class MontiCarlo:
         plt.figure()
         plt.plot(x_points,f_est ,'o')
         plt.xlabel('x points')
-        plt.ylabel('Anti Derivitive of F(x)')
+        plt.title(f'Anti Derivitive of F(x)')
         return
 
     def circ_points(self):
@@ -124,7 +124,14 @@ class MontiCarlo:
         plt.plot(self.out_points[0], self.out_points[1], 'bx')
         plt.plot(x_circ,y_circ,'k')
         plt.axis('square')
-
+        
+    def parallel(self):
+        import mpi4py as MPI
+        comm = MPI.COMM_WORLD
+        ranks = MPI.get_rank
+        
+        return
+        
 def sin(x):
     "simple sin function for test"
     return np.sin(x)
@@ -164,3 +171,5 @@ if __name__ == "__main__":
     print(f'integral check = {test_2d.integrate(circ)}')
     print(f'ratio = {test_2d.ratio}, pi = {test_2d.ratio*4}')
     print(f'mean,var & std = {test_2d.mean_var_std(circ)}')
+    print(f'parallel integral test = {test_2d.parallel()}')
+    
