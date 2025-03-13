@@ -5,9 +5,10 @@ Created on Mon Feb 24 2025
 @author: jackm
 """
 
+from math import fsum
 import numpy as np
 import matplotlib.pyplot as plt
-from math import fsum
+from mpi4py import MPI
  
 class MontiCarlo:
 
@@ -24,6 +25,7 @@ class MontiCarlo:
         self.coords = coords
         self.boundary = boundary
         self.dim = len(coords[:,0])
+        self.N = len(coords)*len(coords[0])
 
     def __str__(self):
         "allows the coordinates to be printed"
@@ -43,6 +45,7 @@ class MontiCarlo:
     def __getitem__(self, index):
         "alllows the seperation of the coordinates"
         return self.coords[index]
+
 
 
     def integrate(self, func):
@@ -124,19 +127,29 @@ class MontiCarlo:
         plt.plot(self.out_points[0], self.out_points[1], 'bx')
         plt.plot(x_circ,y_circ,'k')
         plt.axis('square')
+
+#A subclass to use MPI example
+class ParallelMontiCarlo:
+
+    def __init__(self, n_per_rank,boundaries):
         
-    def parallel(self):
-        from mpi4py import MPI
         comm = MPI.COMM_WORLD
-        ranks = comm.Get_rank()
-        procs = comm.Get_size()
-        print(ranks,procs)
-        
-        return
-        
-def sin(x):
+        self.ranks = comm.Get_rank()
+        self.procs = comm.Get_size()
+        print(self.ranks,self.procs)
+
+        self.n_per_rank = n_per_rank
+        self.boundaries = boundaries
+        self.coords_per_rank  = np.random.uniform(self.boundaries[0],self.boundaries[1],
+                                                  self.N_per_rank)
+        MontiCarlo.__init__(self,self.coords_per_rank,self.boundaries)
+
+
+
+
+def sin(xvals):
     "simple sin function for test"
-    return np.sin(x)
+    return np.sin(xvals)
 def circ(coords):
     "circle function for estimating pi/4"
     rad_point = np.sqrt( np.sum(coords**2, axis = 0) )
@@ -173,5 +186,13 @@ if __name__ == "__main__":
     print(f'integral check = {test_2d.integrate(circ)}')
     print(f'ratio = {test_2d.ratio}, pi = {test_2d.ratio*4}')
     print(f'mean,var & std = {test_2d.mean_var_std(circ)}')
-    print(f'parallel integral test = {test_2d.parallel()}')
+    
+    
+    
+    print('\n2D parallel Testing')
+    num_per_rank = 1000
+    test_par = (num_per_rank, bounds)
+    print(test_par)
+    
+    
     
