@@ -4,16 +4,18 @@ Created on Mon Feb 24 2025
 
 @author: jackm
 """
-
+print('ygf cgh hh vh v')
 from math import fsum
 import numpy as np
 import matplotlib.pyplot as plt
 from mpi4py import MPI
+
+
  
 class MontiCarlo:
 
     def __init__(self, coords, boundary):
-        
+
         """initialisation Constructor of n dimention array
         Parameters
         ----------
@@ -95,10 +97,11 @@ class MontiCarlo:
         plt.figure()
         plt.plot(x_points,f_est ,'o')
         plt.xlabel('x points')
-        plt.title(f'Anti Derivitive of F(x)')
+        plt.title('Anti Derivitive of F(x)')
         return
 
     def circ_points(self):
+        "Used to calculate the ratio of points inside and outside the circle"
 
         self.inclosed_points = np.delete(self.coords, np.where(self.coords[0]**2+self.coords[1]**2
                                         > self.radius**2),axis = 1)
@@ -110,7 +113,7 @@ class MontiCarlo:
         return 
 
     def plotcirc(self):
-        "Plots the special case of a circle"
+        "Plots the special case of the dart board example"
         self.circ_points()
         x_square,y_square = self.radius,self.radius
         square = [ [-x_square, -x_square, x_square, x_square, -x_square]
@@ -127,6 +130,7 @@ class MontiCarlo:
         plt.plot(self.out_points[0], self.out_points[1], 'bx')
         plt.plot(x_circ,y_circ,'k')
         plt.axis('square')
+
 
 #A subclass to run the integral with MPI
 class ParallelMontiCarlo(MontiCarlo):
@@ -145,16 +149,27 @@ class ParallelMontiCarlo(MontiCarlo):
         
         self.n_coords_per_rank = len(self.datapoints_per_rank) // dimensions
         
-        self.coords_per_rank = self.datapoints_per_rank.reshape(dimensions, self.n_coords_per_rank)
+        self.coords_per_rank = self.datapoints_per_rank[:self.n_coords_per_rank * dimensions]
+        self.coords_per_rank = self.coords_per_rank.reshape(dimensions, self.n_coords_per_rank)
+        print(f'sdefbsdfib {np.shape(self.coords_per_rank)}')
 
         super().__init__(self.coords_per_rank,self.boundaries)
         
     def parallel_integrate(self, func):
         local_integral = self.integrate(func)
         
-        if self.rank == 0 :
-            self.comm.reduce(local_integral, op=MPI.SUM, root = 0 )
-        return 
+        local_stats = self.mean_var_std(func)
+        
+        self.par_integral = self.comm.reduce(local_integral, op=MPI.SUM, root = 0 )
+        self.par_mean =  self.comm.reduce(local_stats[0], op=MPI.SUM, root = 0 )
+        self.par_var =  self.comm.reduce(local_stats[1], op=MPI.SUM, root = 0 )
+        self.par_std =  self.comm.reduce(local_stats[2], op=MPI.SUM, root = 0 )
+
+        
+
+        return self.par_integral, self.par_mean, self.par_var, self.par_std
+
+    
 
 
 
@@ -172,39 +187,50 @@ def circ(coords):
 
 
 if __name__ == "__main__":
+    
+    ###########################################################################
+    #Initial Conditions 
+    ###########################################################################
     rad = 1
     low_lim = -rad
     up_lim  = rad
-    N = 1000
+    N = 10
     x_arr =  np.random.uniform(low_lim, up_lim , size =N)
     y_arr = np.random.uniform(low_lim, up_lim , size=N)
     bounds = np.array([low_lim,up_lim])
 
-    print('\n1D testing')
-    arr_1d = np.array([x_arr])
-    test_1d = MontiCarlo(arr_1d, bounds)
-    I =test_1d.integrate(sin)
-    test_1d.plot1d(sin)
-    print(f'integral check = {I} \nmean, var & std = {test_1d.mean_var_std(sin)}')
+    ###########################################################################
+    #Testing for non parallel computations
+    ###########################################################################
+    # print('\n1D testing')
+    # arr_1d = np.array([x_arr])
+    # test_1d = MontiCarlo(arr_1d, bounds)
+    # I =test_1d.integrate(sin)
+    # test_1d.plot1d(sin)
+    # print(f'integral check = {I} \nmean, var & std = {test_1d.mean_var_std(sin)}')
 
-    print('\n2D testing')
-    arr_2d = np.array([x_arr, y_arr])
-    test_2d = MontiCarlo(arr_2d, bounds)
+    # print('\n2D testing')
+    # arr_2d = np.array([x_arr, y_arr])
+    # test_2d = MontiCarlo(arr_2d, bounds)
 
-    test_2d1 = MontiCarlo(arr_2d, bounds)
-    a = test_2d  - test_2d1
-    b = test_2d.point_radius()
-    test_2d.plotcirc()
-    print(f'integral check = {test_2d.integrate(circ)}')
-    print(f'ratio = {test_2d.ratio}, pi = {test_2d.ratio*4}')
-    print(f'mean,var & std = {test_2d.mean_var_std(circ)}')
+    # test_2d1 = MontiCarlo(arr_2d, bounds)
+    # a = test_2d  - test_2d1
+    # b = test_2d.point_radius()
+    # test_2d.plotcirc()
+    # print(f'integral check = {test_2d.integrate(circ)}')
+    # print(f'ratio = {test_2d.ratio}, pi = {test_2d.ratio*4}')
+    # print(f'mean,var & std = {test_2d.mean_var_std(circ)}')
     
-
-    
+    ###########################################################################
+    #Testing for Parallel Computations
+    ###########################################################################
     print('\n2D parallel Testing')
     num_per_rank = 1000
     n_dim = 2
     test_par = ParallelMontiCarlo(num_per_rank, bounds, n_dim)
-    print(test_par.parallel_integrate(circ) )
-    #test_par2  = ParallelMontiCarlo(num_per_rank, bounds, n_dim)
+    test_par_integral = test_par.parallel_integrate(circ)
+    print(f'integral = {test_par_integral[0]}' )
+    print(f'Mean = {test_par_integral[1]}' )
+    print(f'Var = {test_par_integral[2]}' )
+    print(f'Std = {test_par_integral[3]}' )
 
