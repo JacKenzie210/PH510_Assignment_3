@@ -4,7 +4,7 @@ Created on Mon Feb 24 2025
 
 @author: jackm
 """
-print('ygf cgh hh vh v')
+
 from math import fsum
 import numpy as np
 import matplotlib.pyplot as plt
@@ -67,9 +67,9 @@ class MontiCarlo:
 
     def mean_var_std(self,func):
         "calculates the mean, varience and standard deviation"
-        self.f_array = func(self.coords)
-        self.mean = np.mean(self.f_array)
-        self.var = np.var(self.f_array)
+        self.f_array = func(self.coords)# * (self.boundary[1]-self.boundary[0])**self.dim
+        self.mean = np.mean(self.f_array) 
+        self.var = np.var(self.f_array) 
         self.std = np.sqrt(self.var) * (self.boundary[1]-self.boundary[0])**self.dim
         return self.mean, self.var,self.std
 
@@ -85,10 +85,10 @@ class MontiCarlo:
         return area
 
     def plot1d(self,func):
-        
+        "Plots the anti Derivitive of a 1D function (eg. sin(x) dx = -cos(x))"
         x_points = np.linspace(self.boundary[0], self.boundary[1],100)
         f_est =  np.empty(np.shape(x_points))
-        
+
         for i in range(len(x_points)):
             samples = np.random.uniform(self.boundary[0], x_points[i], 1000) 
 
@@ -132,44 +132,66 @@ class MontiCarlo:
         plt.axis('square')
 
 
-#A subclass to run the integral with MPI
+
 class ParallelMontiCarlo(MontiCarlo):
+    """
+    A sub class of MonteCarlo enabling parallel opperations using MPI
+    """
 
     def __init__(self, n_per_rank,boundaries, dimensions = int):
         
         self.comm = MPI.COMM_WORLD
         self.rank = self.comm.Get_rank()
-        print('rank = ',self.rank)
+        print(f'Rank {self.rank}\n----')
+        
         self.procs = self.comm.Get_size()
-
         self.n_per_rank = n_per_rank
+        self.total_points = self.n_per_rank*self.procs
+        
         self.boundaries = boundaries
-        self.datapoints_per_rank  = np.random.uniform(self.boundaries[0],self.boundaries[1],
-                                                  self.n_per_rank)
+        self.points_per_rank  = np.random.uniform(self.boundaries[0],
+                                                      self.boundaries[1],
+                                                      self.n_per_rank)
+
+        self.n_coords_per_rank = len(self.points_per_rank) // dimensions
         
-        self.n_coords_per_rank = len(self.datapoints_per_rank) // dimensions
-        
-        self.coords_per_rank = self.datapoints_per_rank[:self.n_coords_per_rank * dimensions]
+        self.coords_per_rank = self.points_per_rank[:self.n_coords_per_rank * dimensions]
         self.coords_per_rank = self.coords_per_rank.reshape(dimensions, self.n_coords_per_rank)
-        print(f'sdefbsdfib {np.shape(self.coords_per_rank)}')
 
         super().__init__(self.coords_per_rank,self.boundaries)
-        
+
+
     def parallel_integrate(self, func):
+        "enables each rank to integral with the mean,varience and error(std)"
         local_integral = self.integrate(func)
-        
         local_stats = self.mean_var_std(func)
+        
+        self.result = (local_integral, local_stats[0],
+                       local_stats[1], local_stats[2])        
         
         self.par_integral = self.comm.reduce(local_integral, op=MPI.SUM, root = 0 )
         self.par_mean =  self.comm.reduce(local_stats[0], op=MPI.SUM, root = 0 )
         self.par_var =  self.comm.reduce(local_stats[1], op=MPI.SUM, root = 0 )
         self.par_std =  self.comm.reduce(local_stats[2], op=MPI.SUM, root = 0 )
-
         
 
-        return self.par_integral, self.par_mean, self.par_var, self.par_std
 
-    
+        
+        if self.rank == 0:
+            self.par_integral = self.par_integral/self.procs
+            
+            self.expected_val = self.par_mean/self.procs
+            self.expected_val_squared = self.expected_val**2 /self.procs
+
+            self.par_varience =( (self.expected_val_squared -(self.expected_val/self.procs)**2 )/
+                                (self.n_coords_per_rank*self.procs) )
+            self.error = np.sqrt(self.par_var)
+
+            self.result = self.par_integral, self.expected_val, self.par_varience, self.error
+        
+        return self.result
+
+
 
 
 
@@ -185,6 +207,13 @@ def circ(coords):
     ratio = fsum(rad_arr)/len(rad_arr)
     return rad_arr
 
+def Guassian(coords, mean, varience):
+    "the Gaussian distribution function"
+    error = np.sqrt(varience)
+    Gauss = 1/(error*np.sqrt(*2*np.pi)) * np.exp( (coords - mean)**2 /(2*error) )
+    return Gauss
+    
+
 
 if __name__ == "__main__":
     
@@ -194,7 +223,7 @@ if __name__ == "__main__":
     rad = 1
     low_lim = -rad
     up_lim  = rad
-    N = 10
+    N = 10000
     x_arr =  np.random.uniform(low_lim, up_lim , size =N)
     y_arr = np.random.uniform(low_lim, up_lim , size=N)
     bounds = np.array([low_lim,up_lim])
@@ -220,15 +249,16 @@ if __name__ == "__main__":
     # print(f'integral check = {test_2d.integrate(circ)}')
     # print(f'ratio = {test_2d.ratio}, pi = {test_2d.ratio*4}')
     # print(f'mean,var & std = {test_2d.mean_var_std(circ)}')
-    
+
     ###########################################################################
     #Testing for Parallel Computations
     ###########################################################################
-    print('\n2D parallel Testing')
-    num_per_rank = 1000
+    print(f'\n2D parallel Testing \n-------------------')
+    num_per_rank = 10000
     n_dim = 2
     test_par = ParallelMontiCarlo(num_per_rank, bounds, n_dim)
     test_par_integral = test_par.parallel_integrate(circ)
+
     print(f'integral = {test_par_integral[0]}' )
     print(f'Mean = {test_par_integral[1]}' )
     print(f'Var = {test_par_integral[2]}' )
