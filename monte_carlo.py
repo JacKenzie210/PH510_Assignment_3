@@ -17,9 +17,9 @@ class MontiCarlo:
         """initialisation Constructor of n dimention array
         Parameters
         ----------
-        coords : list of co-ordinates in n dimentions , shape (n,num_points).
+        coords : list of co-ordinates in n dimensions , shape (n,num_points).
         boundary : list of boundary conditions for the integral
-        dim: n dimentions
+        dim: n dimensions
         """
 
         self.coords = coords
@@ -31,13 +31,13 @@ class MontiCarlo:
         "allows the coordinates to be printed"
         return str(self.coords)
     def __add__(self, other):
-        "addition with other objects of same class"
+        "addition of coords with other objects of same class"
         return MontiCarlo( np.add(self.coords , other.coords), self.boundary )
     def __sub__(self, other):
-        "subtraction of objects of same class"
+        "subtraction of coords for objects of same class"
         return MontiCarlo( np.subtract(self.coords, other.coords), self.boundary )
     def __mul__(self,other):
-        "multiplication of objects of same class"
+        "multiplication of coords for objects of same class"
         return MontiCarlo(self.coords*other.coords,self.boundary)
     def __pow__(self, power):
         "takes self to the power of any number"
@@ -128,21 +128,33 @@ class MontiCarlo:
         plt.plot(x_circ,y_circ,'k')
         plt.axis('square')
 
-#A subclass to use MPI example
-class ParallelMontiCarlo:
+#A subclass to run the integral with MPI
+class ParallelMontiCarlo(MontiCarlo):
 
-    def __init__(self, n_per_rank,boundaries):
+    def __init__(self, n_per_rank,boundaries, dimensions = int):
         
-        comm = MPI.COMM_WORLD
-        self.ranks = comm.Get_rank()
-        self.procs = comm.Get_size()
-        print(self.ranks,self.procs)
+        self.comm = MPI.COMM_WORLD
+        self.rank = self.comm.Get_rank()
+        print('rank = ',self.rank)
+        self.procs = self.comm.Get_size()
 
         self.n_per_rank = n_per_rank
         self.boundaries = boundaries
-        self.coords_per_rank  = np.random.uniform(self.boundaries[0],self.boundaries[1],
-                                                  self.N_per_rank)
-        MontiCarlo.__init__(self,self.coords_per_rank,self.boundaries)
+        self.datapoints_per_rank  = np.random.uniform(self.boundaries[0],self.boundaries[1],
+                                                  self.n_per_rank)
+        
+        self.n_coords_per_rank = len(self.datapoints_per_rank) // dimensions
+        
+        self.coords_per_rank = self.datapoints_per_rank.reshape(dimensions, self.n_coords_per_rank)
+
+        super().__init__(self.coords_per_rank,self.boundaries)
+        
+    def parallel_integrate(self, func):
+        local_integral = self.integrate(func)
+        
+        if self.rank == 0 :
+            self.comm.reduce(local_integral, op=MPI.SUM, root = 0 )
+        return 
 
 
 
@@ -163,7 +175,7 @@ if __name__ == "__main__":
     rad = 1
     low_lim = -rad
     up_lim  = rad
-    N = 10000
+    N = 1000
     x_arr =  np.random.uniform(low_lim, up_lim , size =N)
     y_arr = np.random.uniform(low_lim, up_lim , size=N)
     bounds = np.array([low_lim,up_lim])
@@ -187,12 +199,12 @@ if __name__ == "__main__":
     print(f'ratio = {test_2d.ratio}, pi = {test_2d.ratio*4}')
     print(f'mean,var & std = {test_2d.mean_var_std(circ)}')
     
-    
+
     
     print('\n2D parallel Testing')
     num_per_rank = 1000
-    test_par = (num_per_rank, bounds)
-    print(test_par)
-    
-    
-    
+    n_dim = 2
+    test_par = ParallelMontiCarlo(num_per_rank, bounds, n_dim)
+    print(test_par.parallel_integrate(circ) )
+    #test_par2  = ParallelMontiCarlo(num_per_rank, bounds, n_dim)
+
