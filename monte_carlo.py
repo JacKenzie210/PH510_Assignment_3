@@ -201,11 +201,11 @@ def circ(coords):
     ratio = fsum(rad_arr)/len(rad_arr)
     return rad_arr
 
-def gaussian(coords, sigma, x0):
+def gaussian(coords):
     "the Gaussian distribution function"
     sigma  = 1
     x0 = 0
-    gauss = 1/(sigma*np.sqrt(*2*np.pi)) * np.exp( (coords - x0)**2 /(2*sigma) )
+    gauss = 1/(sigma*np.sqrt(2*np.pi)) * np.exp( (coords - x0)**2 /(2*sigma) )
     return gauss
 
 
@@ -248,12 +248,21 @@ if __name__ == "__main__":
     #Testing for Parallel Computations
     ###########################################################################
     print(f'\n2D parallel Testing \n-------------------')
-    NUM_PER_RANK = 10000
+    NUM_PER_RANK = 100000
     N_DIM = 2
-    test_par = ParallelMonteCarlo(NUM_PER_RANK, bounds, N_DIM)
-    test_par_integral = test_par.parallel_integrate(circ)
+    # test_par = ParallelMonteCarlo(NUM_PER_RANK, bounds, N_DIM)
+    # test_par_integral = test_par.parallel_integrate(circ)
 
-    print(f'integral = {test_par_integral[0]}' )
-    print(f'Mean = {test_par_integral[1]}' )
-    print(f'Var = {test_par_integral[2]}' )
-    print(f'Std = {test_par_integral[3]}' )
+    # print(f'integral = {test_par_integral[0]}' )
+    # print(f'Mean = {test_par_integral[1]}' )
+    # print(f'Var = {test_par_integral[2]}' )
+    # print(f'Std = {test_par_integral[3]}' )
+    
+    par_guass = ParallelMonteCarlo(NUM_PER_RANK, bounds, N_DIM)
+    par_guass_integral = par_guass.parallel_integrate(gaussian)
+
+    print(f'Guassian function of {N_DIM} dimentions')
+    print(f'integral = {par_guass_integral[0]}' )
+    print(f'Mean = {par_guass_integral[1]}' )
+    print(f'Var = {par_guass_integral[2]}' )
+    print(f'Std = {par_guass_integral[3]}' )
