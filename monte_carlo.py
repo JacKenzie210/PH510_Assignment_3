@@ -11,8 +11,8 @@ import matplotlib.pyplot as plt
 from mpi4py import MPI
 
 
- 
-class MontiCarlo:
+
+class MonteCarlo:
 
     def __init__(self, coords, boundary):
 
@@ -27,23 +27,23 @@ class MontiCarlo:
         self.coords = coords
         self.boundary = boundary
         self.dim = len(coords[:,0])
-        self.N = len(coords)*len(coords[0])
+        self.N_points = len(coords)*len(coords[0])
 
     def __str__(self):
         "allows the coordinates to be printed"
         return str(self.coords)
     def __add__(self, other):
         "addition of coords with other objects of same class"
-        return MontiCarlo( np.add(self.coords , other.coords), self.boundary )
+        return MonteCarlo( np.add(self.coords , other.coords), self.boundary )
     def __sub__(self, other):
         "subtraction of coords for objects of same class"
-        return MontiCarlo( np.subtract(self.coords, other.coords), self.boundary )
+        return MonteCarlo( np.subtract(self.coords, other.coords), self.boundary )
     def __mul__(self,other):
         "multiplication of coords for objects of same class"
-        return MontiCarlo(self.coords*other.coords,self.boundary)
+        return MonteCarlo(self.coords*other.coords,self.boundary)
     def __pow__(self, power):
         "takes self to the power of any number"
-        return MontiCarlo( (self.coords**power),self.boundary )
+        return MonteCarlo( (self.coords**power),self.boundary )
     def __getitem__(self, index):
         "alllows the seperation of the coordinates"
         return self.coords[index]
@@ -68,21 +68,10 @@ class MontiCarlo:
     def mean_var_std(self,func):
         "calculates the mean, varience and standard deviation"
         self.f_array = func(self.coords)# * (self.boundary[1]-self.boundary[0])**self.dim
-        self.mean = np.mean(self.f_array) 
-        self.var = np.var(self.f_array) 
+        self.mean = np.mean(self.f_array)
+        self.var = np.var(self.f_array)
         self.std = np.sqrt(self.var) * (self.boundary[1]-self.boundary[0])**self.dim
         return self.mean, self.var,self.std
-
-    def point_radius(self):
-        "the radius position of the coordinate from the centre"
-        self.radius = (abs(self.boundary[0])+abs(self.boundary[1]))/2
-        return self.radius
-
-    def sq_boundary(self,boundary):
-        "the square boundary conditions"
-        lengths = 2*self.point_radius()
-        area = lengths**2
-        return area
 
     def plot1d(self,func):
         "Plots the anti Derivitive of a 1D function (eg. sin(x) dx = -cos(x))"
@@ -90,7 +79,7 @@ class MontiCarlo:
         f_est =  np.empty(np.shape(x_points))
 
         for i in range(len(x_points)):
-            samples = np.random.uniform(self.boundary[0], x_points[i], 1000) 
+            samples = np.random.uniform(self.boundary[0], x_points[i], 1000)
 
             f_est[i]= (x_points[i]-self.boundary[0])*np.mean(func(samples))
 
@@ -102,7 +91,8 @@ class MontiCarlo:
 
     def circ_points(self):
         "Used to calculate the ratio of points inside and outside the circle"
-
+        self.radius = (abs(self.boundary[0])+abs(self.boundary[1]))/2
+        
         self.inclosed_points = np.delete(self.coords, np.where(self.coords[0]**2+self.coords[1]**2
                                         > self.radius**2),axis = 1)
         self.out_points = np.delete(self.coords, np.where(self.coords[0]**2+self.coords[1]**2
@@ -110,7 +100,7 @@ class MontiCarlo:
 
         self.ratio =  fsum( (np.where(self.coords[0]**2 +self.coords[1]**2< self.radius**2
                               , 1, 0) )/ (len(self.coords[0]))  )
-        return 
+        return
 
     def plotcirc(self):
         "Plots the special case of the dart board example"
@@ -121,8 +111,8 @@ class MontiCarlo:
 
 
         theta = np.linspace(0, 2*np.pi,100)
-        x_circ = self.radius*np.cos(theta) 
-        y_circ = self.radius*np.sin(theta) 
+        x_circ = self.radius*np.cos(theta)
+        y_circ = self.radius*np.sin(theta)
 
         plt.figure()
         plt.plot(self.inclosed_points[0], self.inclosed_points[1], 'rx')
@@ -133,28 +123,28 @@ class MontiCarlo:
 
 
 
-class ParallelMontiCarlo(MontiCarlo):
+class ParallelMonteCarlo(MonteCarlo):
     """
     A sub class of MonteCarlo enabling parallel opperations using MPI
     """
 
     def __init__(self, n_per_rank,boundaries, dimensions = int):
-        
+
         self.comm = MPI.COMM_WORLD
         self.rank = self.comm.Get_rank()
         print(f'Rank {self.rank}\n----')
-        
+
         self.procs = self.comm.Get_size()
         self.n_per_rank = n_per_rank
         self.total_points = self.n_per_rank*self.procs
-        
+
         self.boundaries = boundaries
         self.points_per_rank  = np.random.uniform(self.boundaries[0],
                                                       self.boundaries[1],
                                                       self.n_per_rank)
 
         self.n_coords_per_rank = len(self.points_per_rank) // dimensions
-        
+
         self.coords_per_rank = self.points_per_rank[:self.n_coords_per_rank * dimensions]
         self.coords_per_rank = self.coords_per_rank.reshape(dimensions, self.n_coords_per_rank)
 
@@ -165,21 +155,21 @@ class ParallelMontiCarlo(MontiCarlo):
         "enables each rank to integral with the mean,varience and error(std)"
         local_integral = self.integrate(func)
         local_stats = self.mean_var_std(func)
-        
+
         self.result = (local_integral, local_stats[0],
-                       local_stats[1], local_stats[2])        
-        
+                       local_stats[1], local_stats[2])
+
         self.par_integral = self.comm.reduce(local_integral, op=MPI.SUM, root = 0 )
         self.par_mean =  self.comm.reduce(local_stats[0], op=MPI.SUM, root = 0 )
         self.par_var =  self.comm.reduce(local_stats[1], op=MPI.SUM, root = 0 )
         self.par_std =  self.comm.reduce(local_stats[2], op=MPI.SUM, root = 0 )
-        
 
 
-        
+
+
         if self.rank == 0:
             self.par_integral = self.par_integral/self.procs
-            
+
             self.expected_val = self.par_mean/self.procs
             self.expected_val_squared = self.expected_val**2 /self.procs
 
@@ -188,7 +178,7 @@ class ParallelMontiCarlo(MontiCarlo):
             self.error = np.sqrt(self.par_var)
 
             self.result = self.par_integral, self.expected_val, self.par_varience, self.error
-        
+
         return self.result
 
 
@@ -212,13 +202,13 @@ def Guassian(coords, mean, varience):
     error = np.sqrt(varience)
     Gauss = 1/(error*np.sqrt(*2*np.pi)) * np.exp( (coords - mean)**2 /(2*error) )
     return Gauss
-    
+
 
 
 if __name__ == "__main__":
-    
+
     ###########################################################################
-    #Initial Conditions 
+    #Initial Conditions
     ###########################################################################
     rad = 1
     low_lim = -rad
@@ -233,18 +223,17 @@ if __name__ == "__main__":
     ###########################################################################
     # print('\n1D testing')
     # arr_1d = np.array([x_arr])
-    # test_1d = MontiCarlo(arr_1d, bounds)
+    # test_1d = MonteCarlo(arr_1d, bounds)
     # I =test_1d.integrate(sin)
     # test_1d.plot1d(sin)
     # print(f'integral check = {I} \nmean, var & std = {test_1d.mean_var_std(sin)}')
 
     # print('\n2D testing')
     # arr_2d = np.array([x_arr, y_arr])
-    # test_2d = MontiCarlo(arr_2d, bounds)
+    # test_2d = MonteCarlo(arr_2d, bounds)
 
-    # test_2d1 = MontiCarlo(arr_2d, bounds)
+    # test_2d1 = MonteCarlo(arr_2d, bounds)
     # a = test_2d  - test_2d1
-    # b = test_2d.point_radius()
     # test_2d.plotcirc()
     # print(f'integral check = {test_2d.integrate(circ)}')
     # print(f'ratio = {test_2d.ratio}, pi = {test_2d.ratio*4}')
@@ -256,11 +245,10 @@ if __name__ == "__main__":
     print(f'\n2D parallel Testing \n-------------------')
     num_per_rank = 10000
     n_dim = 2
-    test_par = ParallelMontiCarlo(num_per_rank, bounds, n_dim)
+    test_par = ParallelMonteCarlo(num_per_rank, bounds, n_dim)
     test_par_integral = test_par.parallel_integrate(circ)
 
     print(f'integral = {test_par_integral[0]}' )
     print(f'Mean = {test_par_integral[1]}' )
     print(f'Var = {test_par_integral[2]}' )
     print(f'Std = {test_par_integral[3]}' )
-
