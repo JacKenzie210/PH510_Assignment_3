@@ -1,6 +1,6 @@
 #The "job script" to run it on local pc
 
-Num_cores = 4
+Num_cores = 5
 
 from IPython import get_ipython
 

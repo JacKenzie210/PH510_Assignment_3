@@ -166,7 +166,7 @@ class ParallelMonteCarlo(MonteCarlo):
 
         if self.rank == 0:
             
-            
+            self.par_integral = self.par_integral /self.procs
             
             boundary_dim = (self.boundaries[1] - self.boundaries[0])**self.dim
             
@@ -307,3 +307,6 @@ if __name__ == "__main__":
     print(f'Mean = {par_guass_integral[1]}' )
     print(f'Var = {par_guass_integral[2]}' )
     print(f'Std = {par_guass_integral[3]}' )
+    
+    ###########################################################################
+
