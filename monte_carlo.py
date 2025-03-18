@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 from mpi4py import MPI
 
 
-
 class MonteCarlo:
     """
     Monte Carlo class which calculates integrals of functionsa and coordinates
@@ -216,12 +215,6 @@ def circ(coords):
     ratio = fsum(rad_arr)/len(rad_arr)
     return rad_arr
 
-def normalisation(tval):
-    """
-    normalisation of infinite integeral
-    """
-    return (1+tval**2)/(1-tval**2)**2
-
 
 def gaussian(coords):
     "the Gaussian distribution function"
@@ -229,18 +222,14 @@ def gaussian(coords):
     sigma  = 1
     x0 = 0
     x_new = coords/(1-coords**2)
-    
 
-    norm = np.empty( len(coords[0,:])) 
-    gauss = np.empty( len(coords[0,:])) 
+    t_coefficient = np.prod( (1+coords**2)/(1-coords**2)**2 , axis = 0)
 
     
-    for i in range(len(norm)):
-        gauss[i] = 1/(sigma*np.sqrt(2*np.pi)) * np.exp(np.sum(- (x_new[:,i] - x0)**2 /(2*sigma**2)) )
-        norm[i] = np.prod(normalisation(coords[:,i]))
-    print('dwihbfiarwbaihf',np.shape(norm))
-    
-    return gauss*norm
+    gauss = (1 / (sigma * np.sqrt(2 * np.pi))) * np.exp(np.sum(-((x_new - x0) ** 2) / (2 * sigma**2), axis =0))
+
+
+    return t_coefficient * gauss
 
 
 
