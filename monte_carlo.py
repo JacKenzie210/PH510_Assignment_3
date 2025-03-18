@@ -13,6 +13,10 @@ from mpi4py import MPI
 
 
 class MonteCarlo:
+    """
+    Monte Carlo class which calculates integrals of functionsa and coordinates
+    in n dimentions .
+    """
 
     def __init__(self, coords, boundary):
 
@@ -27,7 +31,7 @@ class MonteCarlo:
         self.coords = coords
         self.boundary = boundary
         self.dim = len(coords[:,0])
-        self.N_points = len(coords)*len(coords[0])
+        #self.n_total_points = len(coords)*len(coords[0])
 
     def __str__(self):
         "allows the coordinates to be printed"
@@ -62,14 +66,14 @@ class MonteCarlo:
         Value of integrated random points.
         """
 
-        self.integral = (self.boundary[1]-self.boundary[0])**self.dim *np.mean(func(self.coords))
-        return self.integral
+        integral = (self.boundary[1]-self.boundary[0])**self.dim *np.mean(func(self.coords))
+        return integral
 
     def mean_var_std(self,func):
         "calculates the mean, varience and standard deviation"
-        self.f_array = func(self.coords)# * (self.boundary[1]-self.boundary[0])**self.dim
-        self.mean = np.mean(self.f_array)
-        self.var = np.var(self.f_array)
+        f_array = func(self.coords)# * (self.boundary[1]-self.boundary[0])**self.dim
+        self.mean = np.mean(f_array)
+        self.var = np.var(f_array)
         self.std = np.sqrt(self.var) * (self.boundary[1]-self.boundary[0])**self.dim
         return self.mean, self.var,self.std
 
@@ -92,7 +96,7 @@ class MonteCarlo:
     def circ_points(self):
         "Used to calculate the ratio of points inside and outside the circle"
         self.radius = (abs(self.boundary[0])+abs(self.boundary[1]))/2
-        
+
         self.inclosed_points = np.delete(self.coords, np.where(self.coords[0]**2+self.coords[1]**2
                                         > self.radius**2),axis = 1)
         self.out_points = np.delete(self.coords, np.where(self.coords[0]**2+self.coords[1]**2
@@ -156,7 +160,7 @@ class ParallelMonteCarlo(MonteCarlo):
         local_integral = self.integrate(func)
         local_stats = self.mean_var_std(func)
 
-        self.result = (local_integral, local_stats[0],
+        results = (local_integral, local_stats[0],
                        local_stats[1], local_stats[2])
 
         self.par_integral = self.comm.reduce(local_integral, op=MPI.SUM, root = 0 )
@@ -177,9 +181,9 @@ class ParallelMonteCarlo(MonteCarlo):
                                 (self.n_coords_per_rank*self.procs) )
             self.error = np.sqrt(self.par_var)
 
-            self.result = self.par_integral, self.expected_val, self.par_varience, self.error
+            results = self.par_integral, self.expected_val, self.par_varience, self.error
 
-        return self.result
+        return results
 
 
 
@@ -197,11 +201,12 @@ def circ(coords):
     ratio = fsum(rad_arr)/len(rad_arr)
     return rad_arr
 
-def Guassian(coords, mean, varience):
+def gaussian(coords, sigma, x0):
     "the Gaussian distribution function"
-    error = np.sqrt(varience)
-    Gauss = 1/(error*np.sqrt(*2*np.pi)) * np.exp( (coords - mean)**2 /(2*error) )
-    return Gauss
+    sigma  = 1
+    x0 = 0
+    gauss = 1/(sigma*np.sqrt(*2*np.pi)) * np.exp( (coords - x0)**2 /(2*sigma) )
+    return gauss
 
 
 
@@ -211,12 +216,12 @@ if __name__ == "__main__":
     #Initial Conditions
     ###########################################################################
     rad = 1
-    low_lim = -rad
-    up_lim  = rad
+    LOW_LIM = -rad
+    UP_LIM  = rad
     N = 10000
-    x_arr =  np.random.uniform(low_lim, up_lim , size =N)
-    y_arr = np.random.uniform(low_lim, up_lim , size=N)
-    bounds = np.array([low_lim,up_lim])
+    x_arr =  np.random.uniform(LOW_LIM, UP_LIM , size =N)
+    y_arr = np.random.uniform(LOW_LIM, UP_LIM , size=N)
+    bounds = np.array([LOW_LIM,UP_LIM])
 
     ###########################################################################
     #Testing for non parallel computations
@@ -243,9 +248,9 @@ if __name__ == "__main__":
     #Testing for Parallel Computations
     ###########################################################################
     print(f'\n2D parallel Testing \n-------------------')
-    num_per_rank = 10000
-    n_dim = 2
-    test_par = ParallelMonteCarlo(num_per_rank, bounds, n_dim)
+    NUM_PER_RANK = 10000
+    N_DIM = 2
+    test_par = ParallelMonteCarlo(NUM_PER_RANK, bounds, N_DIM)
     test_par_integral = test_par.parallel_integrate(circ)
 
     print(f'integral = {test_par_integral[0]}' )
