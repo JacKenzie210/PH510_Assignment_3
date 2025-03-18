@@ -36,18 +36,7 @@ class MonteCarlo:
     def __str__(self):
         "allows the coordinates to be printed"
         return str(self.coords)
-    def __add__(self, other):
-        "addition of coords with other objects of same class"
-        return MonteCarlo( np.add(self.coords , other.coords), self.boundary )
-    def __sub__(self, other):
-        "subtraction of coords for objects of same class"
-        return MonteCarlo( np.subtract(self.coords, other.coords), self.boundary )
-    def __mul__(self,other):
-        "multiplication of coords for objects of same class"
-        return MonteCarlo(self.coords*other.coords,self.boundary)
-    def __pow__(self, power):
-        "takes self to the power of any number"
-        return MonteCarlo( (self.coords**power),self.boundary )
+
     def __getitem__(self, index):
         "alllows the seperation of the coordinates"
         return self.coords[index]
@@ -227,12 +216,31 @@ def circ(coords):
     ratio = fsum(rad_arr)/len(rad_arr)
     return rad_arr
 
+def normalisation(tval):
+    """
+    normalisation of infinite integeral
+    """
+    return (1+tval**2)/(1-tval**2)**2
+
+
 def gaussian(coords):
     "the Gaussian distribution function"
+
     sigma  = 1
     x0 = 0
-    gauss = 1/(sigma*np.sqrt(2*np.pi)) * np.exp( (coords - x0)**2 /(2*sigma) )
-    return gauss
+    x_new = coords/(1-coords**2)
+    
+
+    norm = np.empty( len(coords[0,:])) 
+    gauss = np.empty( len(coords[0,:])) 
+
+    
+    for i in range(len(norm)):
+        gauss[i] = 1/(sigma*np.sqrt(2*np.pi)) * np.exp(np.sum(- (x_new[:,i] - x0)**2 /(2*sigma**2)) )
+        norm[i] = np.prod(normalisation(coords[:,i]))
+    print('dwihbfiarwbaihf',np.shape(norm))
+    
+    return gauss*norm
 
 
 
@@ -274,8 +282,8 @@ if __name__ == "__main__":
     #Testing for Parallel Computations
     ###########################################################################
     print(f'\n2D parallel Testing \n-------------------')
-    NUM_PER_RANK = 10000000
-    N_DIM = 3
+    NUM_PER_RANK = 100000
+    N_DIM = 6
     
     ###################
     #circle/sphere etc 
@@ -291,11 +299,11 @@ if __name__ == "__main__":
     ###################
     #gaussian
     ###################
-    # par_guass = ParallelMonteCarlo(NUM_PER_RANK, bounds, N_DIM)
-    # par_guass_integral = par_guass.parallel_integrate(gaussian)
+    par_guass = ParallelMonteCarlo(NUM_PER_RANK, bounds, N_DIM)
+    par_guass_integral = par_guass.parallel_integrate(gaussian)
 
-    # print(f'Guassian function of {N_DIM} dimentions')
-    # print(f'integral = {par_guass_integral[0]}' )
-    # print(f'Mean = {par_guass_integral[1]}' )
-    # print(f'Var = {par_guass_integral[2]}' )
-    # print(f'Std = {par_guass_integral[3]}' )
+    print(f'Guassian function of {N_DIM} dimentions')
+    print(f'integral = {par_guass_integral[0]}' )
+    print(f'Mean = {par_guass_integral[1]}' )
+    print(f'Var = {par_guass_integral[2]}' )
+    print(f'Std = {par_guass_integral[3]}' )
