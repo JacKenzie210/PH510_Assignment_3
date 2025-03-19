@@ -70,7 +70,7 @@ class MonteCarlo:
         x_points = np.linspace(self.boundary[0], self.boundary[1],100)
         f_est =  np.empty(np.shape(x_points))
 
-        for i in range(len(x_points)):
+        for i in range(enumerate(x_points)):
             samples = np.random.uniform(self.boundary[0], x_points[i], 1000)
 
             f_est[i]= (x_points[i]-self.boundary[0])*np.mean(func(samples))
@@ -79,7 +79,7 @@ class MonteCarlo:
         plt.plot(x_points,f_est ,'o')
         plt.xlabel('x points')
         plt.title('Anti Derivitive of F(x)')
-        return
+
 
     def circ_points(self):
         "Used to calculate the ratio of points inside and outside the circle"
@@ -92,7 +92,6 @@ class MonteCarlo:
 
         self.ratio =  fsum( (np.where(self.coords[0]**2 +self.coords[1]**2< self.radius**2
                               , 1, 0) )/ (len(self.coords[0]))  )
-        return
 
     def plotcirc(self):
         "Plots the special case of the dart board example"
@@ -150,7 +149,7 @@ class ParallelMonteCarlo(MonteCarlo):
         "enables each rank to integral with the mean,varience and error(std)"
         local_integral = self.integrate(func)
         local_stats = self.mean_var_std(func)
-        self.n_total = len(self.coords)*len(self.coords[0])
+        n_total = len(self.coords)*len(self.coords[0])
 
         self.par_integral = self. comm.reduce(local_integral, op = MPI.SUM , root = 0 )
 
@@ -163,20 +162,20 @@ class ParallelMonteCarlo(MonteCarlo):
         self.par_expected_val = self.comm.reduce(self.expected_val,
                                                  op = MPI.SUM, root = 0)
 
-        self.par_expected_val_squared = self.comm.reduce(self.expected_val_squared, 
+        self.par_expected_val_squared = self.comm.reduce(self.expected_val_squared,
                                                  op = MPI.SUM, root = 0)
 
         if self.rank == 0:
 
             self.par_integral = self.par_integral /self.procs
-            
+
             boundary_dim = (self.boundaries[1] - self.boundaries[0])**self.dim
-            
-            var = 1/self.n_total *( (self.par_expected_val_squared/self.procs)
+
+            var = 1/n_total *( (self.par_expected_val_squared/self.procs)
                                    - (self.par_expected_val/self.procs)**2 )
 
             error = np.sqrt(var) * boundary_dim
-            
+
             return self.par_integral, self.expected_val, var, error
 
         return results
@@ -256,9 +255,9 @@ if __name__ == "__main__":
     #print(f'\n2D parallel Testing \n-------------------')
     #NUM_PER_RANK = 100000
     #N_DIM = 6
-    
+
     ###################
-    #circle/sphere etc 
+    #circle/sphere etc
     ###################
     # test_par = ParallelMonteCarlo(NUM_PER_RANK, bounds, N_DIM)
     # test_par_integral = test_par.parallel_integrate(circ)
@@ -279,27 +278,27 @@ if __name__ == "__main__":
     # print(f'Mean = {par_guass_integral[1]}' )
     # print(f'Var = {par_guass_integral[2]}' )
     # print(f'Std = {par_guass_integral[3]}' )
-    
+
     ###########################################################################
-    #Initial Conditions for tasks 
+    #Initial Conditions for tasks
     ###########################################################################
-    NUM_PER_RANK = 100000
+    NUM_PER_RANK = 10000
     N_DIM = 6
-    
+
     ###########################################################################
     #Task 1
     ###########################################################################
-    
+
     for dim in range(1,N_DIM+1):
-        
+
         par_circ = ParallelMonteCarlo(NUM_PER_RANK, bounds, N_DIM)
         par_circ_integral = par_circ.parallel_integrate(circ)
         print(f'{dim} dimentional sphere')
         print(f'integral = {par_circ_integral[0]}' )
         print(f'Mean = {par_circ_integral[1]}' )
         print(f'Var = {par_circ_integral[2]}' )
-        print(f'Std = {par_circ_integral[3]}' )    
-    
+        print(f'Std = {par_circ_integral[3]}' )
+
     ###########################################################################
     #Task 2
     ###########################################################################
@@ -312,6 +311,5 @@ if __name__ == "__main__":
         print(f'integral = {par_guass_integral[0]}' )
         print(f'Mean = {par_guass_integral[1]}' )
         print(f'Var = {par_guass_integral[2]}' )
-        print(f'Std = {par_guass_integral[3]}' )    
+        print(f'Std = {par_guass_integral[3]}' )
     ###########################################################################
-
