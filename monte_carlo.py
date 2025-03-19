@@ -53,7 +53,7 @@ class MonteCarlo:
         -------
         Value of integrated random points.
         """
-
+        print('coords',np.shape(self.coords))
         integral = (self.boundary[1]-self.boundary[0])**self.dim *np.mean(func(self.coords))
         return integral
 
@@ -78,6 +78,7 @@ class MonteCarlo:
         plt.plot(x_points,f_est ,'o')
         plt.xlabel('x points')
         plt.title('Anti Derivitive of F(x)')
+        plt.show()
 
 
     def circ_points(self):
@@ -137,20 +138,22 @@ class ParallelMonteCarlo(MonteCarlo):
                                                       self.n_per_rank)
 
         n_coords_per_rank = len(self.points_per_rank) // dimensions
-
         coords_per_rank = self.points_per_rank[:n_coords_per_rank * dimensions]
         coords_per_rank = coords_per_rank.reshape(dimensions, n_coords_per_rank)
-
+        print('adsfa',np.shape(coords_per_rank))
+        
         super().__init__(coords_per_rank,self.boundaries)
-
+        print(np.shape(self.coords))
 
     def parallel_integrate(self, func):
         "enables each rank to integral with the mean,varience and error(std)"
         local_integral = self.integrate(func)
+        
         local_stats = self.mean_var_std(func)
+        
         n_total = len(self.coords)*len(self.coords[0])
 
-        par_integral = self. comm.reduce(local_integral, op = MPI.SUM , root = 0 )
+        par_integral = self.comm.reduce(local_integral, op = MPI.SUM , root = 0 )
 
         results = (local_integral, local_stats[0],
                        local_stats[1], local_stats[2])
@@ -200,17 +203,22 @@ def gaussian(coords):
     "the Gaussian distribution function"
 
     sigma  = 1
-    x0 = 0
+    
+    x0 =  np.zeros(len(coords[:,0])) #+ np.array([5,6,7,8,9,4])
+    num_x0 = len(coords[:,0])
+    x0 = x0[num_x0-1]
+    print('x0',np.shape(x0))
+    
     x_new = coords/(1-coords**2)
-
-    t_coefficient = np.prod( (1+coords**2)/(1-coords**2)**2 , axis = 0)
-
+    print('xnew ',np.shape(x_new))
+    
+    t_coefficient = np.prod((1+coords**2)/(1-coords**2)**2 ,axis =0)
+    print(np.shape(t_coefficient))
 
     gauss = (1 / (sigma * np.sqrt(2 * np.pi))) * np.exp(np.sum(-((x_new - x0) ** 2)
-                                                               / (2 * sigma**2), axis =0))
+                                                              / (2 * sigma**2), axis =0))
 
-
-    return t_coefficient * gauss
+    return  t_coefficient * gauss
 
 
 
@@ -230,22 +238,22 @@ if __name__ == "__main__":
     ###########################################################################
     #Testing for non parallel computations
     ###########################################################################
-    print('\n1D testing')
-    arr_1d = np.array([x_arr])
-    test_1d = MonteCarlo(arr_1d, bounds)
-    I =test_1d.integrate(sin)
-    test_1d.plot1d(sin)
-    print(f'integral check = {I} \nmean, var & std = {test_1d.mean_var_std(sin)}')
+    # print('\n1D testing')
+    # arr_1d = np.array([x_arr])
+    # test_1d = MonteCarlo(arr_1d, bounds)
+    # I =test_1d.integrate(sin)
+    # test_1d.plot1d(sin)
+    # print(f'integral check = {I} \nmean, var & std = {test_1d.mean_var_std(sin)}')
 
-    print('\n2D testing')
-    arr_2d = np.array([x_arr, y_arr])
-    test_2d = MonteCarlo(arr_2d, bounds)
+    # print('\n2D testing')
+    # arr_2d = np.array([x_arr, y_arr])
+    # test_2d = MonteCarlo(arr_2d, bounds)
 
-    test_2d1 = MonteCarlo(arr_2d, bounds)
-    test_2d.plotcirc()
-    print(f'integral check = {test_2d.integrate(circ)}')
-    print(f'ratio = {test_2d.ratio}, pi = {test_2d.ratio*4}')
-    print(f'mean,var & std = {test_2d.mean_var_std(circ)}')
+    # test_2d1 = MonteCarlo(arr_2d, bounds)
+    # test_2d.plotcirc()
+    # print(f'integral check = {test_2d.integrate(circ)}')
+    # print(f'ratio = {test_2d.ratio}, pi = {test_2d.ratio*4}')
+    # print(f'mean,var & std = {test_2d.mean_var_std(circ)}')
 
     ###########################################################################
     #Testing for Parallel Computations
@@ -280,22 +288,22 @@ if __name__ == "__main__":
     ###########################################################################
     #Initial Conditions for tasks
     ###########################################################################
-    NUM_PER_RANK = 10000
+    NUM_PER_RANK = 1000000
     N_DIM = 6
 
     ###########################################################################
     #Task 1
     ###########################################################################
 
-    for dim in range(1,N_DIM+1):
+    # for dim in range(1,N_DIM+1):
 
-        par_circ = ParallelMonteCarlo(NUM_PER_RANK, bounds, N_DIM)
-        par_circ_integral = par_circ.parallel_integrate(circ)
-        print(f'{dim} dimentional sphere')
-        print(f'integral = {par_circ_integral[0]}' )
-        print(f'Mean = {par_circ_integral[1]}' )
-        print(f'Var = {par_circ_integral[2]}' )
-        print(f'Std = {par_circ_integral[3]}' )
+    #     par_circ = ParallelMonteCarlo(NUM_PER_RANK, bounds, N_DIM)
+    #     par_circ_integral = par_circ.parallel_integrate(circ)
+    #     print(f'{dim} dimentional sphere')
+    #     print(f'integral = {par_circ_integral[0]}' )
+    #     print(f'Mean = {par_circ_integral[1]}' )
+    #     print(f'Var = {par_circ_integral[2]}' )
+    #     print(f'Std = {par_circ_integral[3]}' )
 
     ###########################################################################
     #Task 2
