@@ -124,7 +124,10 @@ class ParallelMonteCarlo(MonteCarlo):
 
         self.comm = MPI.COMM_WORLD
         self.rank = self.comm.Get_rank()
-        print(f'Rank {self.rank}\n----')
+        if self.rank == 0:
+            print('\nRank 0 - reduced MPI.SUM result\n--------------------------')
+        else:
+            print(f'\nRank {self.rank}\n----')
 
         self.procs = self.comm.Get_size()
         self.n_per_rank = n_per_rank
@@ -149,7 +152,7 @@ class ParallelMonteCarlo(MonteCarlo):
         local_stats = self.mean_var_std(func)
         self.n_total = len(self.coords)*len(self.coords[0])
 
-        self.par_integral = self. comm.reduce(local_integral, op = MPI.SUM , root = 0 ) 
+        self.par_integral = self. comm.reduce(local_integral, op = MPI.SUM , root = 0 )
 
         results = (local_integral, local_stats[0],
                        local_stats[1], local_stats[2])
@@ -157,14 +160,14 @@ class ParallelMonteCarlo(MonteCarlo):
         self.expected_val = local_stats[0]
         self.expected_val_squared = np.mean(self.f_array**2)
 
-        self.par_expected_val = self.comm.reduce(self.expected_val, 
+        self.par_expected_val = self.comm.reduce(self.expected_val,
                                                  op = MPI.SUM, root = 0)
-        
+
         self.par_expected_val_squared = self.comm.reduce(self.expected_val_squared, 
                                                  op = MPI.SUM, root = 0)
 
         if self.rank == 0:
-            
+
             self.par_integral = self.par_integral /self.procs
             
             boundary_dim = (self.boundaries[1] - self.boundaries[0])**self.dim
@@ -175,27 +178,6 @@ class ParallelMonteCarlo(MonteCarlo):
             error = np.sqrt(var) * boundary_dim
             
             return self.par_integral, self.expected_val, var, error
-            
-        # self.par_integral = self.comm.reduce(local_integral, op=MPI.SUM, root = 0 )
-        # self.par_mean =  self.comm.reduce(local_stats[0], op=MPI.SUM, root = 0 )
-        
-        # self.par_var =  self.comm.reduce(local_stats[1], op=MPI.SUM, root = 0 )
-        # self.par_std =  self.comm.reduce(local_stats[2], op=MPI.SUM, root = 0 )
-
-
-
-
-        # if self.rank == 0:
-        #     self.par_integral = self.par_integral/self.procs
-
-        #     self.expected_val = self.par_mean/self.procs
-        #     self.expected_val_squared = self.expected_val**2 /self.procs
-
-        #     self.par_varience =( (self.expected_val_squared -(self.expected_val/self.procs)**2 )/
-        #                         (self.n_coords_per_rank*self.procs) )
-        #     self.error = np.sqrt(self.par_var)
-
-        #     results = self.par_integral, self.expected_val, self.par_varience, self.error
 
         return results
 
@@ -210,7 +192,7 @@ def sin(xvals):
 def circ(coords):
     "circle function for estimating pi/4"
     rad_point = np.sqrt( np.sum(coords**2, axis = 0) )
-    radius = RAD
+    radius = 1
     rad_arr = np.where(rad_point < radius,1,0)
     ratio = fsum(rad_arr)/len(rad_arr)
     return rad_arr
@@ -225,8 +207,9 @@ def gaussian(coords):
 
     t_coefficient = np.prod( (1+coords**2)/(1-coords**2)**2 , axis = 0)
 
-    
-    gauss = (1 / (sigma * np.sqrt(2 * np.pi))) * np.exp(np.sum(-((x_new - x0) ** 2) / (2 * sigma**2), axis =0))
+
+    gauss = (1 / (sigma * np.sqrt(2 * np.pi))) * np.exp(np.sum(-((x_new - x0) ** 2)
+                                                               / (2 * sigma**2), axis =0))
 
 
     return t_coefficient * gauss
@@ -270,32 +253,65 @@ if __name__ == "__main__":
     ###########################################################################
     #Testing for Parallel Computations
     ###########################################################################
-    print(f'\n2D parallel Testing \n-------------------')
-    NUM_PER_RANK = 100000
-    N_DIM = 6
+    #print(f'\n2D parallel Testing \n-------------------')
+    #NUM_PER_RANK = 100000
+    #N_DIM = 6
     
     ###################
     #circle/sphere etc 
     ###################
-    test_par = ParallelMonteCarlo(NUM_PER_RANK, bounds, N_DIM)
-    test_par_integral = test_par.parallel_integrate(circ)
+    # test_par = ParallelMonteCarlo(NUM_PER_RANK, bounds, N_DIM)
+    # test_par_integral = test_par.parallel_integrate(circ)
 
-    print(f'integral = {test_par_integral[0]}' )
-    print(f'Mean = {test_par_integral[1]}' )
-    print(f'Var = {test_par_integral[2]}' )
-    print(f'Std = {test_par_integral[3]}' )
+    # print(f'integral = {test_par_integral[0]}' )
+    # print(f'Mean = {test_par_integral[1]}' )
+    # print(f'Var = {test_par_integral[2]}' )
+    # print(f'Std = {test_par_integral[3]}' )
 
     ###################
     #gaussian
     ###################
-    par_guass = ParallelMonteCarlo(NUM_PER_RANK, bounds, N_DIM)
-    par_guass_integral = par_guass.parallel_integrate(gaussian)
+    # par_guass = ParallelMonteCarlo(NUM_PER_RANK, bounds, N_DIM)
+    # par_guass_integral = par_guass.parallel_integrate(gaussian)
 
-    print(f'Guassian function of {N_DIM} dimentions')
-    print(f'integral = {par_guass_integral[0]}' )
-    print(f'Mean = {par_guass_integral[1]}' )
-    print(f'Var = {par_guass_integral[2]}' )
-    print(f'Std = {par_guass_integral[3]}' )
+    # print(f'Guassian function of {N_DIM} dimentions')
+    # print(f'integral = {par_guass_integral[0]}' )
+    # print(f'Mean = {par_guass_integral[1]}' )
+    # print(f'Var = {par_guass_integral[2]}' )
+    # print(f'Std = {par_guass_integral[3]}' )
     
+    ###########################################################################
+    #Initial Conditions for tasks 
+    ###########################################################################
+    NUM_PER_RANK = 100000
+    N_DIM = 6
+    
+    ###########################################################################
+    #Task 1
+    ###########################################################################
+    
+    for dim in range(1,N_DIM+1):
+        
+        par_circ = ParallelMonteCarlo(NUM_PER_RANK, bounds, N_DIM)
+        par_circ_integral = par_circ.parallel_integrate(circ)
+        print(f'{dim} dimentional sphere')
+        print(f'integral = {par_circ_integral[0]}' )
+        print(f'Mean = {par_circ_integral[1]}' )
+        print(f'Var = {par_circ_integral[2]}' )
+        print(f'Std = {par_circ_integral[3]}' )    
+    
+    ###########################################################################
+    #Task 2
+    ###########################################################################
+
+    for dim in range(1,N_DIM+1):
+        par_guass = ParallelMonteCarlo(NUM_PER_RANK, bounds, dim)
+        par_guass_integral = par_guass.parallel_integrate(gaussian)
+
+        print(f'{dim} dimentional Gaussian')
+        print(f'integral = {par_guass_integral[0]}' )
+        print(f'Mean = {par_guass_integral[1]}' )
+        print(f'Var = {par_guass_integral[2]}' )
+        print(f'Std = {par_guass_integral[3]}' )    
     ###########################################################################
 
