@@ -53,7 +53,6 @@ class MonteCarlo:
         -------
         Value of integrated random points.
         """
-        print('coords',np.shape(self.coords))
         integral = (self.boundary[1]-self.boundary[0])**self.dim *np.mean(func(self.coords))
         return integral
 
@@ -140,10 +139,9 @@ class ParallelMonteCarlo(MonteCarlo):
         n_coords_per_rank = len(self.points_per_rank) // dimensions
         coords_per_rank = self.points_per_rank[:n_coords_per_rank * dimensions]
         coords_per_rank = coords_per_rank.reshape(dimensions, n_coords_per_rank)
-        print('adsfa',np.shape(coords_per_rank))
         
         super().__init__(coords_per_rank,self.boundaries)
-        print(np.shape(self.coords))
+
 
     def parallel_integrate(self, func):
         "enables each rank to integral with the mean,varience and error(std)"
@@ -207,13 +205,11 @@ def gaussian(coords):
     x0 =  np.zeros(len(coords[:,0])) #+ np.array([5,6,7,8,9,4])
     num_x0 = len(coords[:,0])
     x0 = x0[num_x0-1]
-    print('x0',np.shape(x0))
     
     x_new = coords/(1-coords**2)
-    print('xnew ',np.shape(x_new))
     
     t_coefficient = np.prod((1+coords**2)/(1-coords**2)**2 ,axis =0)
-    print(np.shape(t_coefficient))
+
 
     gauss = (1 / (sigma * np.sqrt(2 * np.pi))) * np.exp(np.sum(-((x_new - x0) ** 2)
                                                               / (2 * sigma**2), axis =0))
