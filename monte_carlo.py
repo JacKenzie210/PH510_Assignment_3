@@ -59,7 +59,7 @@ class MonteCarlo:
 
     def mean_var_std(self,func):
         "calculates the mean, varience and standard deviation"
-        self.f_array = func(self.coords)# * (self.boundary[1]-self.boundary[0])**self.dim
+        self.f_array = func(self.coords)
         self.mean = np.mean(self.f_array)
         var = np.var(self.f_array)
         std = np.sqrt(var) * (self.boundary[1]-self.boundary[0])**self.dim
@@ -123,10 +123,7 @@ class ParallelMonteCarlo(MonteCarlo):
 
         self.comm = MPI.COMM_WORLD
         self.rank = self.comm.Get_rank()
-        if self.rank == 0:
-            print('\nRank 0 - reduced MPI.SUM result\n--------------------------')
-        else:
-            print(f'\nRank {self.rank}\n----')
+
 
         self.procs = self.comm.Get_size()
         self.n_per_rank = n_per_rank
@@ -178,7 +175,8 @@ class ParallelMonteCarlo(MonteCarlo):
 
             error = np.sqrt(var) * boundary_dim
             
-            print(f'\n{self.dim} dimentional Gaussian',
+            print('\nRank 0 - reduced MPI.SUM result\n-----------------------',
+                  f'\n{self.dim} dimentional {func.__name__}',
                   f'\nIntegral = {par_integral}',
                   f'\nMean = {expected_val}',
                   f'\nVar = {var}',
@@ -235,67 +233,11 @@ if __name__ == "__main__":
     ###########################################################################
     #Initial Conditions
     ###########################################################################
-    RAD = 1
-    LOW_LIM = -RAD
-    UP_LIM  = RAD
-    N = 10000
-    x_arr =  np.random.uniform(LOW_LIM, UP_LIM , size =N)
-    y_arr = np.random.uniform(LOW_LIM, UP_LIM , size=N)
+    
+    LOW_LIM = -1
+    UP_LIM  = 1
     bounds = np.array([LOW_LIM,UP_LIM])
 
-    ###########################################################################
-    #Testing for non parallel computations
-    ###########################################################################
-    # print('\n1D testing')
-    # arr_1d = np.array([x_arr])
-    # test_1d = MonteCarlo(arr_1d, bounds)
-    # I =test_1d.integrate(sin)
-    # test_1d.plot1d(sin)
-    # print(f'integral check = {I} \nmean, var & std = {test_1d.mean_var_std(sin)}')
-
-    # print('\n2D testing')
-    # arr_2d = np.array([x_arr, y_arr])
-    # test_2d = MonteCarlo(arr_2d, bounds)
-
-    # test_2d1 = MonteCarlo(arr_2d, bounds)
-    # test_2d.plotcirc()
-    # print(f'integral check = {test_2d.integrate(circ)}')
-    # print(f'ratio = {test_2d.ratio}, pi = {test_2d.ratio*4}')
-    # print(f'mean,var & std = {test_2d.mean_var_std(circ)}')
-
-    ###########################################################################
-    #Testing for Parallel Computations
-    ###########################################################################
-    #print(f'\n2D parallel Testing \n-------------------')
-    #NUM_PER_RANK = 100000
-    #N_DIM = 6
-
-    ###################
-    #circle/sphere etc
-    ###################
-    # test_par = ParallelMonteCarlo(NUM_PER_RANK, bounds, N_DIM)
-    # test_par_integral = test_par.parallel_integrate(circ)
-
-    # print(f'integral = {test_par_integral[0]}' )
-    # print(f'Mean = {test_par_integral[1]}' )
-    # print(f'Var = {test_par_integral[2]}' )
-    # print(f'Std = {test_par_integral[3]}' )
-
-    ###################
-    #gaussian
-    ###################
-    # par_guass = ParallelMonteCarlo(NUM_PER_RANK, bounds, N_DIM)
-    # par_guass_integral = par_guass.parallel_integrate(gaussian)
-
-    # print(f'Guassian function of {N_DIM} dimentions')
-    # print(f'integral = {par_guass_integral[0]}' )
-    # print(f'Mean = {par_guass_integral[1]}' )
-    # print(f'Var = {par_guass_integral[2]}' )
-    # print(f'Std = {par_guass_integral[3]}' )
-
-    ###########################################################################
-    #Initial Conditions for tasks
-    ###########################################################################
     NUM_PER_RANK = 1000000
     N_DIM = 6
 
@@ -303,20 +245,16 @@ if __name__ == "__main__":
     #Task 1
     ###########################################################################
 
-    # for dim in range(1,N_DIM+1):
+    'Repeats integral calulation for each Dimention'
+    for dim in range(1,N_DIM+1):
+        par_circ = ParallelMonteCarlo(NUM_PER_RANK, bounds, dim)
+        par_circ_integral = par_circ.parallel_integrate(circ)
 
-    #     par_circ = ParallelMonteCarlo(NUM_PER_RANK, bounds, N_DIM)
-    #     par_circ_integral = par_circ.parallel_integrate(circ)
-    #     print(f'{dim} dimentional sphere')
-    #     print(f'integral = {par_circ_integral[0]}' )
-    #     print(f'Mean = {par_circ_integral[1]}' )
-    #     print(f'Var = {par_circ_integral[2]}' )
-    #     print(f'Std = {par_circ_integral[3]}' )
 
     ###########################################################################
     #Task 2
     ###########################################################################
-
+    'Repeats integral calulation for each Dimention'
     for dim in range(1,N_DIM+1):
         par_guass = ParallelMonteCarlo(NUM_PER_RANK, bounds, dim)
         par_guass_integral = par_guass.parallel_integrate(gaussian)
