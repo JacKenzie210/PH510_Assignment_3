@@ -1,3 +1,4 @@
+#!/usr/bin/env Python3
 #This code is licenced with MPL 2.0
 """
 Created on Mon Feb 24 2025
@@ -68,7 +69,7 @@ class MonteCarlo:
         "Plots the anti Derivitive of a 1D function (eg. sin(x) dx = -cos(x))"
         x_points = np.linspace(self.boundary[0], self.boundary[1],100)
         f_est =  np.empty(np.shape(x_points))
-        
+
         for i in range(len(x_points)):
             samples = np.random.uniform(self.boundary[0], x_points[i], 1000)
             f_est[i]= (x_points[i]-self.boundary[0])*np.mean(func(samples))
@@ -139,7 +140,7 @@ class ParallelMonteCarlo(MonteCarlo):
         n_coords_per_rank = len(self.points_per_rank) // dimensions
         coords_per_rank = self.points_per_rank[:n_coords_per_rank * dimensions]
         coords_per_rank = coords_per_rank.reshape(dimensions, n_coords_per_rank)
-        
+
         super().__init__(coords_per_rank,self.boundaries)
 
 
@@ -148,7 +149,7 @@ class ParallelMonteCarlo(MonteCarlo):
         local_integral = self.integrate(func)
         
         local_stats = self.mean_var_std(func)
-        
+
         n_total = len(self.coords)*len(self.coords[0])
 
         par_integral = self.comm.reduce(local_integral, op = MPI.SUM , root = 0 )
@@ -201,13 +202,13 @@ def gaussian(coords):
     "the Gaussian distribution function"
 
     sigma  = 1
-    
-    x0 =  np.zeros(len(coords[:,0])) #+ np.array([5,6,7,8,9,4])
+
+    x0 =  np.zeros(len(coords[:,0]))
     num_x0 = len(coords[:,0])
     x0 = x0[num_x0-1]
-    
+
     x_new = coords/(1-coords**2)
-    
+
     t_coefficient = np.prod((1+coords**2)/(1-coords**2)**2 ,axis =0)
 
 
@@ -314,4 +315,7 @@ if __name__ == "__main__":
         print(f'Mean = {par_guass_integral[1]}' )
         print(f'Var = {par_guass_integral[2]}' )
         print(f'Std = {par_guass_integral[3]}' )
+        
     ###########################################################################
+
+    MPI.Finalize()
