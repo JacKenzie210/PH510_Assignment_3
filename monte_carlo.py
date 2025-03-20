@@ -1,4 +1,4 @@
-#!/usr/bin/env Python3
+#!/usr/bin/env python3
 #This code is licenced with MPL 2.0
 """
 Created on Mon Feb 24 2025
@@ -157,6 +157,7 @@ class ParallelMonteCarlo(MonteCarlo):
         results = (local_integral, local_stats[0],
                        local_stats[1], local_stats[2])
 
+
         expected_val = local_stats[0]
         expected_val_squared = np.mean(self.f_array**2)
 
@@ -176,8 +177,18 @@ class ParallelMonteCarlo(MonteCarlo):
                                    - (par_expected_val/self.procs)**2 )
 
             error = np.sqrt(var) * boundary_dim
+            
+            print(f'\n{self.dim} dimentional Gaussian',
+                  f'\nIntegral = {par_integral}',
+                  f'\nMean = {expected_val}',
+                  f'\nVar = {var}',
+                  f'\nStd = {error}')
 
             return par_integral, expected_val, var, error
+        
+        
+        
+        
 
         return results
 
@@ -310,12 +321,6 @@ if __name__ == "__main__":
         par_guass = ParallelMonteCarlo(NUM_PER_RANK, bounds, dim)
         par_guass_integral = par_guass.parallel_integrate(gaussian)
 
-        print(f'\n{dim} dimentional Gaussian')
-        print(f'integral = {par_guass_integral[0]}' )
-        print(f'Mean = {par_guass_integral[1]}' )
-        print(f'Var = {par_guass_integral[2]}' )
-        print(f'Std = {par_guass_integral[3]}' )
-        
+
+
     ###########################################################################
-
-
