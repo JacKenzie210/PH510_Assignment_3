@@ -310,7 +310,7 @@ if __name__ == "__main__":
         par_guass = ParallelMonteCarlo(NUM_PER_RANK, bounds, dim)
         par_guass_integral = par_guass.parallel_integrate(gaussian)
 
-        print(f'{dim} dimentional Gaussian')
+        print(f'\n{dim} dimentional Gaussian')
         print(f'integral = {par_guass_integral[0]}' )
         print(f'Mean = {par_guass_integral[1]}' )
         print(f'Var = {par_guass_integral[2]}' )
@@ -318,4 +318,4 @@ if __name__ == "__main__":
         
     ###########################################################################
 
-    MPI.Finalize()
+
