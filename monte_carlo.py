@@ -6,7 +6,6 @@ Created on Mon Feb 24 2025
 @author: jackm
 """
 
-from math import fsum
 import numpy as np
 import matplotlib.pyplot as plt
 from mpi4py import MPI
