@@ -15,14 +15,13 @@ class ParallelMonteCarlo(MonteCarlo):
     A sub class of MonteCarlo enabling parallel opperations using MPI
     """
 
-    def __init__(self, n_per_rank,boundaries, dimensions = int):
-
+    def __init__(self, n_per_rank:int,boundaries, dimensions:int):
+        "initial conditions and the start of the parallelism"
+        
         self.comm = MPI.COMM_WORLD
         self.rank = self.comm.Get_rank()
 
-
         self.procs = self.comm.Get_size()
-
         self.total_points = n_per_rank*self.procs
 
 
@@ -39,7 +38,9 @@ class ParallelMonteCarlo(MonteCarlo):
 
 
     def parallel_integrate(self, func):
-        "enables each rank to integral with the mean,varience and error(std)"
+        """enables each rank to integrate the function 
+        with the mean,varience and error(std)"""
+        
         local_integral = self.integrate(func)
 
         local_stats = self.mean_var_std(func)
@@ -95,6 +96,8 @@ if __name__ == "__main__":
 
         sigma  = 1
 
+        #x0 is an array of values the size of number of dimensions which is 
+        #currently set to all 0s but can be changed to any set of values.
         x0 =  np.zeros(len(coords[:,0]))
         num_x0 = len(coords[:,0])
         x0 = x0[num_x0-1]

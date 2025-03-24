@@ -8,7 +8,7 @@ Created on Mon Feb 24 2025
 
 import numpy as np
 import matplotlib.pyplot as plt
-from mpi4py import MPI
+
 
 
 class MonteCarlo:
@@ -106,75 +106,6 @@ class MonteCarlo:
         plt.show()
 
 
-
-class ParallelMonteCarlo(MonteCarlo):
-    """
-    A sub class of MonteCarlo enabling parallel opperations using MPI
-    """
-
-    def __init__(self, n_per_rank,boundaries, dimensions = int):
-
-        self.comm = MPI.COMM_WORLD
-        self.rank = self.comm.Get_rank()
-
-
-        self.procs = self.comm.Get_size()
-
-        self.total_points = n_per_rank*self.procs
-
-
-        self.points_per_rank  = np.random.uniform(boundaries[0],
-                                                      boundaries[1],
-                                                      n_per_rank)
-
-        n_coords_per_rank = len(self.points_per_rank) // dimensions
-        coords_per_rank = self.points_per_rank[:n_coords_per_rank * dimensions]
-        coords_per_rank = coords_per_rank.reshape(dimensions, n_coords_per_rank)
-
-
-        super().__init__(coords_per_rank,boundaries)
-
-
-    def parallel_integrate(self, func):
-        "enables each rank to integral with the mean,varience and error(std)"
-        local_integral = self.integrate(func)
-
-        local_stats = self.mean_var_std(func)
-
-        n_total = len(self.coords)*len(self.coords[0])
-
-        par_integral = self.comm.reduce(local_integral, op = MPI.SUM , root = 0 )
-
-        expected_val = local_stats[0]
-        expected_val_squared = np.mean(self.f_array**2)
-
-        par_expected_val = self.comm.reduce(expected_val,
-                                                 op = MPI.SUM, root = 0)
-
-        par_expected_val_squared = self.comm.reduce(expected_val_squared,
-                                                 op = MPI.SUM, root = 0)
-
-        if self.rank == 0:
-
-            par_integral = par_integral /self.procs
-
-            boundary_dim = (self.boundary[1] - self.boundary[0])**self.dim
-
-            var = 1/n_total *( (par_expected_val_squared/self.procs)
-                                   - (par_expected_val/self.procs)**2 )
-
-            error = np.sqrt(var) * boundary_dim
-
-            print(f'\n{self.dim} dimentional {func.__name__}',
-                  '\n-------------------------',
-                  f'\nIntegral = {par_integral}',
-                  f'\nMean = {expected_val}',
-                  f'\nVar = {var}',
-                  f'\nStd = {error}')
-
-            return par_integral, expected_val, var, error
-
-        return None
 
 if __name__ == "__main__":
 
