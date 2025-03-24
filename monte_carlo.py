@@ -95,7 +95,7 @@ class MonteCarlo:
         x_points = np.linspace(self.boundary[0], self.boundary[1],100)
         f_est =  np.empty(np.shape(x_points))
 
-        for i in range(enumerate(x_points)):
+        for i in range(len(x_points)):
             samples = np.random.uniform(self.boundary[0], x_points[i], 1000)
             f_est[i]= (x_points[i]-self.boundary[0])*np.mean(func(samples))
 
@@ -130,7 +130,7 @@ class ParallelMonteCarlo(MonteCarlo):
         n_coords_per_rank = len(self.points_per_rank) // dimensions
         coords_per_rank = self.points_per_rank[:n_coords_per_rank * dimensions]
         coords_per_rank = coords_per_rank.reshape(dimensions, n_coords_per_rank)
-        
+
 
         super().__init__(coords_per_rank,boundaries)
 
@@ -176,76 +176,48 @@ class ParallelMonteCarlo(MonteCarlo):
 
         return None
 
-
-
-
-
-def sin(xvals):
-    "simple sin function for test"
-    return np.sin(xvals)
-def circ(coords):
-    "circle function for estimating pi/4"
-    rad_point = np.sqrt( np.sum(coords**2, axis = 0) )
-    radius = 1
-    rad_arr = np.where(rad_point < radius,1,0)
-    return rad_arr
-
-
-def gaussian(coords):
-    "the Gaussian distribution function"
-
-    sigma  = 1
-
-    x0 =  np.zeros(len(coords[:,0]))
-    num_x0 = len(coords[:,0])
-    x0 = x0[num_x0-1]
-
-    x_new = coords/(1-coords**2)
-
-    t_coefficient = np.prod((1+coords**2)/(1-coords**2)**2 ,axis =0)
-
-
-    gauss = (1 / (sigma * np.sqrt(2 * np.pi))) * np.exp(np.sum(-((x_new - x0) ** 2)
-                                                              / (2 * sigma**2), axis =0))
-
-    return  t_coefficient * gauss
-
-
-
 if __name__ == "__main__":
 
     ###########################################################################
     #Initial Conditions
     ###########################################################################
+    RAD = 1
+    LOW_LIM = -RAD
+    UP_LIM  = RAD
+    N = 10000
+    x_arr =  np.random.uniform(LOW_LIM, UP_LIM , size =N)
+    y_arr = np.random.uniform(LOW_LIM, UP_LIM , size=N)
 
     LOW_LIM = -1
     UP_LIM  = 1
     bounds = np.array([LOW_LIM,UP_LIM])
 
-    NUM_PER_RANK = 1000000
-    N_DIM = 6
-    N_COORDS = NUM_PER_RANK // N_DIM
+    def sin(x):
+        "A simple sin function for testing"
+        return np.sin(x)
 
-    if MPI.COMM_WORLD.Get_rank() == 0:
-        print(f' {NUM_PER_RANK} points per rank in {N_DIM} dimentions gives',
-              f' \n{N_COORDS} coordiantes per rank')
-
-
-    ###########################################################################
-    #Task 1
-    ###########################################################################
-
-    for dim in range(1,N_DIM+1):
-        par_circ = ParallelMonteCarlo(NUM_PER_RANK, bounds, dim)
-        par_circ_integral = par_circ.parallel_integrate(circ)
-
+    def circ(coords):
+        "circle function for estimating pi/4"
+        rad_point = np.sqrt( np.sum(coords**2, axis = 0) )
+        radius = 1
+        rad_arr = np.where(rad_point < radius,1,0)
+        return rad_arr
 
     ###########################################################################
-    #Task 2
+    #Testing for non parallel computations
     ###########################################################################
+    print('\n1D testing')
+    arr_1d = np.array([x_arr])
+    test_1d = MonteCarlo(arr_1d, bounds)
+    Int =test_1d.integrate(sin)
+    test_1d.plot1d(sin)
+    print(f'integral check = {Int} \nmean, var & std = {test_1d.mean_var_std(sin)}')
 
-    for dim in range(1,N_DIM+1):
-        par_guass = ParallelMonteCarlo(NUM_PER_RANK, bounds, dim)
-        par_guass_integral = par_guass.parallel_integrate(gaussian)
+    print('\n2D testing')
+    arr_2d = np.array([x_arr, y_arr])
+    test_2d = MonteCarlo(arr_2d, bounds)
 
-    ###########################################################################
+    test_2d1 = MonteCarlo(arr_2d, bounds)
+    test_2d.plotcirc()
+    print(f'integral check = {test_2d.integrate(circ)}')
+    print(f'mean,var & std = {test_2d.mean_var_std(circ)}')
