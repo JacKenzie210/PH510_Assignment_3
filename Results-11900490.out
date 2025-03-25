@@ -1,0 +1,82 @@
+===================================================================================
+SLURM Job ID:            11900490
+Submit time:             Mon Mar 24 20:56:55 GMT 2025 (Unix Epoch time: 1742849815)
+Start time:              Mon Mar 24 20:57:43 GMT 2025 (Unix Epoch time: 1742849863)
+No. nodes:               1
+No. tasks:               16
+Job name:                assignment_3.sh
+Account:                 teaching
+QoS:                     teaching
+Partition (queue):       teaching
+Submit directory:        /users/xdb20131/Year_5/Assignment_3
+Script name:             /users/xdb20131/Year_5/Assignment_3/assignment_3.sh
+Master node:             wee16
+Nodes used:              wee16
+Task distribution:       
+===================================================================================
+
+************* Module monte_carlo
+monte_carlo.py:98:8: C0200: Consider using enumerate instead of iterating with range and len (consider-using-enumerate)
+monte_carlo.py:59:8: W0201: Attribute 'f_array' defined outside __init__ (attribute-defined-outside-init)
+monte_carlo.py:60:8: W0201: Attribute 'mean' defined outside __init__ (attribute-defined-outside-init)
+
+------------------------------------------------------------------
+Your code has been rated at 9.71/10 (previous run: 9.62/10, +0.10)
+
+100000000 points per rank in 6 dimentions gives  
+16666666 coordiantes per rank
+
+1 dimentional circ 
+------------------------- 
+Integral = 2.0 
+Mean = 1.0 
+Var = 0.0 
+Std = 0.0
+
+2 dimentional circ 
+------------------------- 
+Integral = 3.14158101 
+Mean = 0.78540192 
+Var = 1.6854954985046122e-09 
+Std = 0.00016421914619213496
+
+3 dimentional circ 
+------------------------- 
+Integral = 4.188910541889105 
+Mean = 0.5234674252346743 
+Var = 2.494423901063483e-09 
+Std = 0.0003995536630642534
+
+4 dimentional circ 
+------------------------- 
+Integral = 4.935071199999999 
+Mean = 0.30839968 
+Var = 2.133055134801975e-09 
+Std = 0.0007389601575926172
+
+5 dimentional circ 
+------------------------- 
+Integral = 5.2639987 
+Mean = 0.16453195 
+Var = 1.3743972274062335e-09 
+Std = 0.0011863316403367076
+
+6 dimentional circ 
+------------------------- 
+Integral = 5.1691946067677845 
+Mean = 0.08084028323361132 
+Var = 7.424509133662519e-10 
+Std = 0.00174386895756194
+--------------------------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code. Per user-direction, the job has been aborted.
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+mpirun noticed that process rank 15 with PID 1943211 on node wee16 exited on signal 9 (Killed).
+--------------------------------------------------------------------------
+===================================================================================
+SLURM job 11900490 ended:     Mon Mar 24 21:12:17 GMT 2025 (Unix Epoch time: 1742850737)
+This is an estimated end time using the 'date' command from node wee16.hpc.strath.ac.uk
+For accurate timings, use 'sacct -j 11900490 -X --format=Submit,Start,End,Elapsed'
+======================================================================================
+slurmstepd: error: Detected 1 oom-kill event(s) in StepId=11900490.batch cgroup. Some of your processes may have been killed by the cgroup out-of-memory handler.
