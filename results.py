@@ -24,8 +24,8 @@ def gaussian(coords):
     "the Gaussian distribution function"
 
     sigma  = 1
-    
-    #x0 is an array of values the size of number of dimensions which is 
+
+    #x0 is an array of values the size of number of dimensions which is
     #currently set to all 0s but can be changed to any set of values.
     x0 =  np.zeros(len(coords[:,0]))
     num_x0 = len(coords[:,0])

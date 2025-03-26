@@ -9,7 +9,6 @@ import numpy as np
 from mpi4py import MPI
 from monte_carlo import MonteCarlo
 
-
 class ParallelMonteCarlo(MonteCarlo):
     """
     A sub class of MonteCarlo enabling parallel opperations using MPI
@@ -120,7 +119,7 @@ if __name__ == "__main__":
     UP_LIM  = 1
     bounds = np.array([LOW_LIM,UP_LIM])
 
-    NUM_PER_RANK = 1000000
+    NUM_PER_RANK = int(10000)
     N_DIM = 6
     N_COORDS = NUM_PER_RANK // N_DIM
 
