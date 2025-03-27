@@ -12,19 +12,17 @@ import matplotlib.pyplot as plt
 
 
 class MonteCarlo:
-    """
-    Monte Carlo class which calculates integrals of functionsa and coordinates
-    in n dimentions .
-    """
 
     def __init__(self, coords, boundary):
 
-        """initialisation Constructor of n dimention array
-        Parameters
+        """    
+        Monte Carlo class which calculates integrals of functionsa and 
+        coordinates in n dimentions.
+        
+        initialisation Constructor Parameters
         ----------
         coords : list of co-ordinates in n dimensions , shape (n,num_points).
         boundary : list of boundary conditions for the integral
-        dim: n dimensions
         """
 
         self.coords = coords
@@ -36,7 +34,7 @@ class MonteCarlo:
         return str(self.coords)
 
     def __getitem__(self, index):
-        "alllows the seperation of the coordinates"
+        "allows the seperation of the coordinates into each dimension"
         return self.coords[index]
 
 

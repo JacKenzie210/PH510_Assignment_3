@@ -15,7 +15,7 @@ class ParallelMonteCarlo(MonteCarlo):
     """
 
     def __init__(self, n_per_rank:int,boundaries, dimensions:int):
-        "initial conditions and the start of the parallelism"
+        "initial conditions and the initialisation of the parallism"
         
         self.comm = MPI.COMM_WORLD
         self.rank = self.comm.Get_rank()
